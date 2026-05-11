@@ -13,7 +13,7 @@ databases:
     databaseName: marshfit
     user: marshfit
     region: oregon
-    plan: free
+    plan: basic-256mb     # Postgres pago mais básico (~US$ 6/mês, persistente)
 
 services:
   # ── API ──────────────────────────────────────────────────────────────
@@ -21,12 +21,11 @@ services:
     name: marshfit-api
     runtime: node
     region: oregon
-    plan: free
+    plan: starter        # always-on (~US$ 7/mês, sem cold start)
     rootDir: .
     buildCommand: corepack enable && pnpm install --no-frozen-lockfile && pnpm --filter api db:generate && pnpm --filter api build
-    # preDeployCommand é pago no Render. No free, rodamos a migration no
-    # startCommand (idempotente). Se a migration falhar, o serviço não sobe.
-    startCommand: pnpm --filter api db:migrate:prod && pnpm --filter api start
+    preDeployCommand: pnpm --filter api db:migrate:prod
+    startCommand: pnpm --filter api start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
