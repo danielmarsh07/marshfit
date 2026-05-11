@@ -1,0 +1,28 @@
+# MarshFit — dev local
+# Sobe apenas o Postgres. A API/Web/Landing rodam pelo `pnpm dev`.
+# Uso:
+#   docker compose up -d        # sobe o banco em background
+#   docker compose down         # para o banco (mantém os dados)
+#   docker compose down -v      # para e apaga TUDO (cuidado)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: marshfit-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: marshfit
+      POSTGRES_PASSWORD: marshfit
+      POSTGRES_DB: marshfit
+    ports:
+      - "5432:5432"
+    volumes:
+      - marshfit-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "marshfit"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  marshfit-pgdata:

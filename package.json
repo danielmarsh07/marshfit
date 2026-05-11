@@ -1,0 +1,29 @@
+{
+  "name": "marshfit",
+  "private": true,
+  "version": "0.1.0",
+  "description": "MarshFit — SaaS de gestão para academias, boxes e estúdios fitness. Marsh Consultoria.",
+  "packageManager": "pnpm@10.0.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "bcrypt",
+      "esbuild",
+      "prisma"
+    ]
+  },
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "db:migrate": "pnpm --filter api db:migrate",
+    "db:studio": "pnpm --filter api db:studio",
+    "db:seed": "pnpm --filter api db:seed",
+    "db:generate": "pnpm --filter api db:generate"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

@@ -1,0 +1,25 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# Prisma
+apps/api/prisma/migrations/dev.db*
+
+# Uploads locais (dev sem S3)
+apps/uploads/
+
+# Vite
+.vite/
+
+# TypeScript
+*.tsbuildinfo
+
+# Test
+coverage/

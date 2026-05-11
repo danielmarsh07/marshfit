@@ -1,0 +1,516 @@
+// MarshFit — Schema inicial Fase 1.
+// Apenas as entidades de fundação: Academia (tenant), Unidade, Usuario,
+// UsuarioAcademia (N:M), e enums de papel/status. Demais entidades de
+// domínio (Aluno, Plano, Aula, etc) entram nas Fases 3+.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum Papel {
+  SUPER_ADMIN       // Marsh Consultoria (cross-tenant)
+  ADMIN_ACADEMIA    // Dono/admin de uma academia inteira
+  GESTOR_UNIDADE    // Gestor de uma unidade específica
+  FINANCEIRO        // Financeiro da academia
+  PROFESSOR         // Professor
+  RECEPCAO          // Recepção/atendimento
+  ALUNO             // Aluno (acessa portal próprio)
+}
+
+enum AcademiaStatus {
+  TRIAL             // Período de teste gratuito
+  ATIVA             // Pagando, operação normal
+  SUSPENSA          // Inadimplente ou pausada pela Marsh
+  CANCELADA         // Encerrada, dados retidos por LGPD
+}
+
+enum Periodicidade {
+  MENSAL
+  TRIMESTRAL
+  SEMESTRAL
+  ANUAL
+}
+
+enum AlunoStatus {
+  ATIVO
+  INATIVO
+  CONGELADO         // Plano trancado temporariamente (afastamento, viagem)
+  INADIMPLENTE
+}
+
+enum MatriculaStatus {
+  ATIVA
+  SUSPENSA
+  CANCELADA
+  TRANCADA          // Aluno congelou
+}
+
+enum Sexo {
+  M
+  F
+  OUTRO
+}
+
+enum NivelTreino {
+  INICIANTE
+  INTERMEDIARIO
+  AVANCADO
+  TODOS
+}
+
+enum FormatoTreino {
+  AMRAP        // As Many Rounds As Possible
+  EMOM         // Every Minute On the Minute
+  FOR_TIME     // Completar o mais rápido possível
+  TABATA       // 20s on / 10s off
+  STRENGTH     // Força (sets x reps)
+  HIIT
+  LIVRE        // Texto livre
+}
+
+enum ReservaStatus {
+  CONFIRMADA
+  LISTA_ESPERA
+  CANCELADA
+  NO_SHOW       // Aluno reservou mas não compareceu
+}
+
+enum OrigemCheckin {
+  APP_ALUNO     // Aluno apertou "estou aqui"
+  RECEPCAO      // Recepção registrou
+  PROFESSOR     // Professor marcou presença
+  QR            // QR Code (Fase 6+)
+}
+
+// ─────────────────────────────────────────────
+// ACADEMIA — tenant raiz do sistema
+// ─────────────────────────────────────────────
+
+model Academia {
+  id          Int             @id @default(autoincrement())
+  nome        String
+  cnpjCpf     String          @unique
+  email       String
+  telefone    String
+  logoPath    String?
+  status      AcademiaStatus  @default(TRIAL)
+  trialFim    DateTime?
+  // Slug usado eventualmente para subdomínio (Fase 7+)
+  slug        String          @unique
+
+  criadoEm    DateTime        @default(now())
+  atualizadoEm DateTime       @updatedAt
+
+  unidades    Unidade[]
+  vinculos    UsuarioAcademia[]
+
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// UNIDADE — filial/box dentro de uma academia
+// ─────────────────────────────────────────────
+
+model Unidade {
+  id          Int       @id @default(autoincrement())
+  academiaId  Int
+  nome        String
+  endereco    String
+  bairro      String?
+  cidade      String
+  estado      String    @db.Char(2)
+  telefone    String
+  email       String?
+  ativo       Boolean   @default(true)
+
+  criadoEm    DateTime  @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  academia    Academia          @relation(fields: [academiaId], references: [id], onDelete: Cascade)
+  vinculos    UsuarioAcademia[]
+  salas       Sala[]
+  alunos      Aluno[]
+
+  @@index([academiaId])
+}
+
+// ─────────────────────────────────────────────
+// MODALIDADE — Crossfit, Hyrox, Pilates, Musculação, etc
+// Tenant-scoped. Lista personalizada por academia.
+// ─────────────────────────────────────────────
+
+model Modalidade {
+  id          Int       @id @default(autoincrement())
+  academiaId  Int
+  nome        String
+  // Cor hex para uso na agenda (#22C55E, etc).
+  cor         String?
+  // Ícone (nome do lucide-react ou similar).
+  icone       String?
+  ativo       Boolean   @default(true)
+
+  criadoEm    DateTime  @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  professores Professor[]
+  planos      Plano[]
+  aulas       Aula[]
+  treinos     Treino[]
+
+  @@unique([academiaId, nome])
+  @@index([academiaId])
+}
+
+// ─────────────────────────────────────────────
+// SALA — espaço físico dentro de uma unidade
+// Tenant-scoped via Unidade.academiaId; também denormalizamos academiaId
+// no próprio model pro filtro defensivo do prismaTenant funcionar.
+// ─────────────────────────────────────────────
+
+model Sala {
+  id          Int       @id @default(autoincrement())
+  academiaId  Int
+  unidadeId   Int
+  nome        String
+  capacidade  Int
+  ativo       Boolean   @default(true)
+
+  criadoEm    DateTime  @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  unidade     Unidade   @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
+  aulas       Aula[]
+
+  @@index([academiaId])
+  @@index([academiaId, unidadeId])
+}
+
+// ─────────────────────────────────────────────
+// PROFESSOR — pode ou não ter login no sistema (usuarioId opcional)
+// ─────────────────────────────────────────────
+
+model Professor {
+  id          Int       @id @default(autoincrement())
+  academiaId  Int
+  nome        String
+  cpf         String?
+  email       String?
+  telefone    String
+  // Se for null, o professor não tem login (só está cadastrado).
+  // Se tiver valor, está vinculado a uma conta Usuario com papel PROFESSOR.
+  usuarioId   Int?      @unique
+  observacoes String?   @db.Text
+  ativo       Boolean   @default(true)
+
+  criadoEm    DateTime  @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  modalidades Modalidade[]
+  aulas       Aula[]
+
+  @@unique([academiaId, cpf])
+  @@index([academiaId])
+}
+
+// ─────────────────────────────────────────────
+// PLANO — produto comercial vendido aos alunos
+// (não confundir com PlanoSaaS, o plano que a Marsh vende às academias)
+// ─────────────────────────────────────────────
+
+model Plano {
+  id              Int           @id @default(autoincrement())
+  academiaId      Int
+  nome            String
+  descricao       String?       @db.Text
+  // Valor em reais. Decimal(10,2) cobre até 99.999.999,99.
+  valor           Decimal       @db.Decimal(10,2)
+  periodicidade   Periodicidade @default(MENSAL)
+  // Limite semanal de aulas (null = ilimitado).
+  aulasPorSemana  Int?
+  // Acesso "livre" (qualquer modalidade) ou restrito (relação modalidades).
+  acessoLivre     Boolean       @default(false)
+  ativo           Boolean       @default(true)
+
+  criadoEm        DateTime      @default(now())
+  atualizadoEm    DateTime      @updatedAt
+
+  modalidades     Modalidade[]
+  matriculas      Matricula[]
+
+  @@unique([academiaId, nome])
+  @@index([academiaId])
+}
+
+// ─────────────────────────────────────────────
+// ALUNO — pessoa que treina na academia
+// Pode ter conta Usuario vinculada (portal do aluno) ou não.
+// ─────────────────────────────────────────────
+
+model Aluno {
+  id            Int          @id @default(autoincrement())
+  academiaId    Int
+  unidadeId     Int
+  nome          String
+  cpf           String?
+  dataNasc      DateTime?
+  sexo          Sexo?
+  email         String?
+  telefone      String
+  endereco      String?
+  bairro        String?
+  cidade        String?
+  estado        String?      @db.Char(2)
+  fotoPath      String?
+  observacoes   String?      @db.Text
+  // Snapshot rápido — atualizado pelo módulo financeiro e por jobs.
+  status        AlunoStatus  @default(ATIVO)
+
+  // Vínculo opcional com Usuario (papel ALUNO) — para acesso ao portal.
+  usuarioId     Int?         @unique
+
+  criadoEm      DateTime     @default(now())
+  atualizadoEm  DateTime     @updatedAt
+
+  unidade       Unidade      @relation(fields: [unidadeId], references: [id])
+  matriculas    Matricula[]
+  reservas      Reserva[]
+  checkins      Checkin[]
+
+  @@unique([academiaId, cpf])
+  @@index([academiaId])
+  @@index([academiaId, unidadeId])
+  @@index([academiaId, status])
+}
+
+// ─────────────────────────────────────────────
+// MATRÍCULA — vínculo Aluno ↔ Plano com periodicidade
+// O proxVencto é o gatilho da geração de mensalidade.
+// ─────────────────────────────────────────────
+
+model Matricula {
+  id          Int             @id @default(autoincrement())
+  academiaId  Int
+  alunoId     Int
+  planoId     Int
+  dataInicio  DateTime        @default(now())
+  dataFim     DateTime?       // null = open-ended; recorrente
+  proxVencto  DateTime        // data da próxima mensalidade a ser gerada
+  status      MatriculaStatus @default(ATIVA)
+  observacao  String?         @db.Text
+
+  criadoEm    DateTime        @default(now())
+  atualizadoEm DateTime       @updatedAt
+
+  aluno       Aluno           @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  plano       Plano           @relation(fields: [planoId], references: [id])
+
+  @@index([academiaId])
+  @@index([academiaId, alunoId])
+  @@index([academiaId, status])
+}
+
+// ─────────────────────────────────────────────
+// USUARIO — conta global (email único no sistema todo)
+// Um usuário pode pertencer a múltiplas academias via UsuarioAcademia.
+// ─────────────────────────────────────────────
+
+model Usuario {
+  id            Int       @id @default(autoincrement())
+  nome          String
+  email         String    @unique
+  senhaHash     String    // bcryptjs
+  ativo         Boolean   @default(true)
+  ultimoLogin   DateTime?
+
+  // Tema visual preferido (default | box). Sync entre dispositivos.
+  temaPreferido String?
+
+  criadoEm      DateTime  @default(now())
+  atualizadoEm  DateTime  @updatedAt
+
+  vinculos      UsuarioAcademia[]
+}
+
+// ─────────────────────────────────────────────
+// USUARIO_ACADEMIA — vínculo N:M com papel + unidade opcional
+// O JWT carrega o vínculo ativo (academiaId + papel). Quando o
+// usuário pertence a >1 academia, ele escolhe qual ativar no login.
+// ─────────────────────────────────────────────
+
+model UsuarioAcademia {
+  usuarioId   Int
+  academiaId  Int
+  papel       Papel
+  // Quando o papel for restrito a uma unidade (GESTOR_UNIDADE, PROFESSOR,
+  // RECEPCAO), unidadeId limita o escopo. ADMIN_ACADEMIA / FINANCEIRO
+  // têm unidadeId = null (academia toda).
+  unidadeId   Int?
+  ativo       Boolean   @default(true)
+
+  criadoEm    DateTime  @default(now())
+
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  academia    Academia  @relation(fields: [academiaId], references: [id], onDelete: Cascade)
+  unidade     Unidade?  @relation(fields: [unidadeId], references: [id])
+
+  @@id([usuarioId, academiaId])
+  @@index([academiaId])
+  @@index([academiaId, papel])
+}
+
+// ─────────────────────────────────────────────
+// TREINO — template de WOD / série / aula
+// Pode ser reutilizado em várias Aulas. Para crossfit, faz sentido criar
+// um Treino por dia/WOD; para musculação, um Treino fica vinculado à Aula
+// por longos períodos.
+// ─────────────────────────────────────────────
+
+model Treino {
+  id           Int            @id @default(autoincrement())
+  academiaId   Int
+  nome         String
+  modalidadeId Int?           // null = treino genérico (qualquer modalidade)
+  nivel        NivelTreino?
+  formato      FormatoTreino?
+  duracaoMin   Int?           // duração estimada em minutos
+  descricao    String         @db.Text  // texto livre / markdown
+  ativo        Boolean        @default(true)
+
+  criadoEm     DateTime       @default(now())
+  atualizadoEm DateTime       @updatedAt
+
+  modalidade   Modalidade?    @relation(fields: [modalidadeId], references: [id])
+  aulas        Aula[]
+
+  @@index([academiaId])
+  @@index([academiaId, modalidadeId])
+}
+
+// ─────────────────────────────────────────────
+// AULA — turma recorrente. Não materializa instâncias.
+// Para mostrar a grade da semana, expandimos virtualmente
+// (diaSemana × horarioInicio). Reservas reais usam (aulaId, dataAula).
+// ─────────────────────────────────────────────
+
+model Aula {
+  id                Int       @id @default(autoincrement())
+  academiaId        Int
+  unidadeId         Int
+  modalidadeId      Int
+  professorId       Int
+  salaId            Int
+  // Nome opcional (ex: "CrossFit Avançado", "Pilates Solo"). Se vazio,
+  // o frontend mostra o nome da modalidade.
+  nome              String?
+  // 0 = Domingo … 6 = Sábado
+  diaSemana         Int
+  horarioInicio     String    // "HH:MM"
+  horarioFim        String    // "HH:MM"
+  capacidade        Int
+  permiteListaEspera Boolean  @default(true)
+  treinoId          Int?      // treino padrão vinculado (opcional)
+  ativa             Boolean   @default(true)
+
+  criadoEm          DateTime  @default(now())
+  atualizadoEm      DateTime  @updatedAt
+
+  unidade           Unidade    @relation(fields: [unidadeId], references: [id])
+  modalidade        Modalidade @relation(fields: [modalidadeId], references: [id])
+  professor         Professor  @relation(fields: [professorId], references: [id])
+  sala              Sala       @relation(fields: [salaId], references: [id])
+  treino            Treino?    @relation(fields: [treinoId], references: [id])
+  reservas          Reserva[]
+  checkins          Checkin[]
+
+  @@index([academiaId])
+  @@index([academiaId, unidadeId, diaSemana])
+  @@index([academiaId, diaSemana])
+}
+
+// ─────────────────────────────────────────────
+// RESERVA — vaga do aluno em uma instância da aula
+// dataAula representa o dia concreto (ex: 2026-05-12). A unique
+// (aulaId, alunoId, dataAula) impede reserva duplicada.
+// Para evitar overbooking, criar reserva sempre dentro de uma transação
+// que conta as CONFIRMADAS antes de inserir (ver reservas.service.ts).
+// ─────────────────────────────────────────────
+
+model Reserva {
+  id                 Int           @id @default(autoincrement())
+  academiaId         Int
+  aulaId             Int
+  alunoId            Int
+  dataAula           DateTime      // dia da aula (UTC 00:00, semantically date-only)
+  status             ReservaStatus @default(CONFIRMADA)
+  // Posição na lista de espera (1, 2, 3…) — null para CONFIRMADA.
+  posicaoEspera      Int?
+  canceladaEm        DateTime?
+  motivoCancelamento String?
+
+  criadoEm           DateTime      @default(now())
+
+  aula               Aula          @relation(fields: [aulaId], references: [id], onDelete: Cascade)
+  aluno              Aluno         @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  checkin            Checkin?
+
+  @@unique([aulaId, alunoId, dataAula])
+  @@index([academiaId])
+  @@index([academiaId, dataAula])
+  @@index([aulaId, dataAula, status])
+  @@index([alunoId, dataAula])
+}
+
+// ─────────────────────────────────────────────
+// CHECK-IN — presença efetiva do aluno em uma aula
+// Origem registra como o check-in foi feito (auto-app, recepção, prof…)
+// ─────────────────────────────────────────────
+
+model Checkin {
+  id          Int           @id @default(autoincrement())
+  academiaId  Int
+  alunoId     Int
+  aulaId      Int?
+  // Se houve reserva prévia, vinculamos para fechar o ciclo.
+  reservaId   Int?          @unique
+  dataHora    DateTime      @default(now())
+  origem      OrigemCheckin @default(APP_ALUNO)
+
+  aluno       Aluno         @relation(fields: [alunoId], references: [id])
+  aula        Aula?         @relation(fields: [aulaId], references: [id])
+  reserva     Reserva?      @relation(fields: [reservaId], references: [id])
+
+  @@index([academiaId])
+  @@index([academiaId, dataHora])
+  @@index([alunoId, dataHora])
+}
+
+// ─────────────────────────────────────────────
+// LEAD — captura de interesse da landing (sem criar conta)
+// ─────────────────────────────────────────────
+
+model Lead {
+  id          Int       @id @default(autoincrement())
+  nome        String
+  email       String
+  telefone    String
+  academia    String?   // nome da academia/box (campo livre)
+  cidade      String?
+  mensagem    String?   @db.Text
+  // De onde veio: "hero", "planos-starter", "cta-final", "faq", etc.
+  origem      String?
+  // Marcado quando alguém da Marsh contata o lead.
+  contatadoEm DateTime?
+
+  criadoEm    DateTime  @default(now())
+
+  @@index([criadoEm])
+}

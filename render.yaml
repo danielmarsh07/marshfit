@@ -1,0 +1,84 @@
+# MarshFit — Blueprint do Render
+# Provisiona: 1 banco Postgres + API + Web + Landing
+# Como usar: Render → New → Blueprint → conectar este repositório → Apply
+#
+# Após o deploy inicial, defina as variáveis "sync: false" no painel
+# (são valores que dependem dos domínios gerados pelo Render):
+#   marshfit-api → CORS_ORIGINS, PORTAL_URL, LANDING_URL
+#   marshfit-web → VITE_API_URL
+#   marshfit-landing → VITE_API_URL, VITE_PORTAL_URL
+
+databases:
+  - name: marshfit-db
+    databaseName: marshfit
+    user: marshfit
+    region: oregon
+    plan: free
+
+services:
+  # ── API ──────────────────────────────────────────────────────────────
+  - type: web
+    name: marshfit-api
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: .
+    buildCommand: corepack enable && pnpm install --no-frozen-lockfile && pnpm --filter api db:generate && pnpm --filter api build
+    preDeployCommand: pnpm --filter api db:migrate:prod
+    startCommand: pnpm --filter api start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_HOST
+        value: 0.0.0.0
+      # PORT é injetado automaticamente pelo Render; o env.ts respeita PORT primeiro.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: marshfit-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: STORAGE_MODE
+        value: local
+      # Definir manualmente no painel após o primeiro deploy (uma vez que os
+      # domínios marshfit-web.onrender.com e marshfit-landing.onrender.com
+      # estiverem disponíveis):
+      - key: CORS_ORIGINS
+        sync: false
+      - key: PORTAL_URL
+        sync: false
+      - key: LANDING_URL
+        sync: false
+
+  # ── Web (sistema admin + portal aluno) ───────────────────────────────
+  - type: web
+    name: marshfit-web
+    runtime: static
+    rootDir: .
+    buildCommand: corepack enable && pnpm install --no-frozen-lockfile && pnpm --filter web build
+    staticPublishPath: ./apps/web/dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false   # defina como https://marshfit-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # ── Landing pública ──────────────────────────────────────────────────
+  - type: web
+    name: marshfit-landing
+    runtime: static
+    rootDir: .
+    buildCommand: corepack enable && pnpm install --no-frozen-lockfile && pnpm --filter landing build
+    staticPublishPath: ./apps/landing/dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false      # https://marshfit-api.onrender.com
+      - key: VITE_PORTAL_URL
+        sync: false      # https://marshfit-web.onrender.com
