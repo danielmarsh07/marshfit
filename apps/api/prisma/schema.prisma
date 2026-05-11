@@ -139,6 +139,7 @@ model Unidade {
   vinculos    UsuarioAcademia[]
   salas       Sala[]
   alunos      Aluno[]
+  aulas       Aula[]
 
   @@index([academiaId])
 }
