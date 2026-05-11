@@ -45,6 +45,7 @@ export class PlanosService {
     }
     return this.db.plano.create({
       data: {
+        academiaId: this.academiaId,
         nome: input.nome.trim(),
         descricao: input.descricao || null,
         valor: input.valor,

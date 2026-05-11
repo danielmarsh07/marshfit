@@ -9,7 +9,7 @@ export interface ModalidadeInput {
 }
 
 export class ModalidadesService {
-  constructor(private db: PrismaTenantClient) {}
+  constructor(private db: PrismaTenantClient, private academiaId: number) {}
 
   async listar(filtros: { busca?: string; ativo?: boolean } = {}) {
     return this.db.modalidade.findMany({
@@ -32,6 +32,7 @@ export class ModalidadesService {
   async criar(input: ModalidadeInput) {
     return this.db.modalidade.create({
       data: {
+        academiaId: this.academiaId,
         nome: input.nome.trim(),
         cor: input.cor || null,
         icone: input.icone || null,

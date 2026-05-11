@@ -13,7 +13,7 @@ export interface UnidadeInput {
 }
 
 export class UnidadesService {
-  constructor(private db: PrismaTenantClient) {}
+  constructor(private db: PrismaTenantClient, private academiaId: number) {}
 
   async listar(filtros: { busca?: string; ativo?: boolean } = {}) {
     return this.db.unidade.findMany({
@@ -40,6 +40,7 @@ export class UnidadesService {
   async criar(input: UnidadeInput) {
     return this.db.unidade.create({
       data: {
+        academiaId: this.academiaId,
         nome: input.nome,
         endereco: input.endereco,
         bairro: input.bairro ?? null,

@@ -7,6 +7,8 @@ export interface JwtPayload {
   papel: Papel
   academiaId: number | null   // null apenas para SUPER_ADMIN sem vínculo
   unidadeId?: number | null
+  // Marca tokens de refresh (não setado em access tokens).
+  kind?: 'refresh'
 }
 
 declare module '@fastify/jwt' {

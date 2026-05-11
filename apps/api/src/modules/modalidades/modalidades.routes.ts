@@ -17,7 +17,7 @@ export async function modalidadesRoutes(app: FastifyInstance) {
     preHandler: [app.authenticate, app.requireTenant],
     handler: async (request) => {
       const q = request.query as Record<string, string>
-      const service = new ModalidadesService(request.tenant.db)
+      const service = new ModalidadesService(request.tenant.db, request.tenant.academiaId)
       return service.listar({
         busca: q.busca,
         ativo: q.ativo === 'false' ? false : q.ativo === 'true' ? true : undefined,
@@ -29,7 +29,7 @@ export async function modalidadesRoutes(app: FastifyInstance) {
     preHandler: [app.authenticate, app.requireTenant],
     handler: async (request) => {
       const id = Number((request.params as { id: string }).id)
-      return new ModalidadesService(request.tenant.db).buscar(id)
+      return new ModalidadesService(request.tenant.db, request.tenant.academiaId).buscar(id)
     },
   })
 
@@ -37,7 +37,7 @@ export async function modalidadesRoutes(app: FastifyInstance) {
     preHandler: [app.authorize(...PAPEIS_GESTAO), app.requireTenant],
     handler: async (request, reply) => {
       const data = bodySchema.parse(request.body)
-      const criada = await new ModalidadesService(request.tenant.db).criar(data)
+      const criada = await new ModalidadesService(request.tenant.db, request.tenant.academiaId).criar(data)
       return reply.status(201).send(criada)
     },
   })
@@ -47,7 +47,7 @@ export async function modalidadesRoutes(app: FastifyInstance) {
     handler: async (request) => {
       const id = Number((request.params as { id: string }).id)
       const data = partialSchema.parse(request.body)
-      return new ModalidadesService(request.tenant.db).atualizar(id, data)
+      return new ModalidadesService(request.tenant.db, request.tenant.academiaId).atualizar(id, data)
     },
   })
 
@@ -55,7 +55,7 @@ export async function modalidadesRoutes(app: FastifyInstance) {
     preHandler: [app.authorize(...PAPEIS_GESTAO), app.requireTenant],
     handler: async (request) => {
       const id = Number((request.params as { id: string }).id)
-      return new ModalidadesService(request.tenant.db).excluir(id)
+      return new ModalidadesService(request.tenant.db, request.tenant.academiaId).excluir(id)
     },
   })
 }

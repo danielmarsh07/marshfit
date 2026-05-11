@@ -18,7 +18,9 @@ function rangeDatas(inicio: Date, fim: Date): Date[] {
 }
 
 export class PortalAlunoService {
-  constructor(private db: PrismaTenantClient, private academiaId: number) {}
+  // academiaId não é usado diretamente — a extension já escopa todas as queries.
+  // Mantemos o construtor com 1 arg pra consistência.
+  constructor(private db: PrismaTenantClient) {}
 
   async carregarAluno(usuarioId: number) {
     const aluno = await this.db.aluno.findFirst({
@@ -70,9 +72,11 @@ export class PortalAlunoService {
       orderBy: [{ diaSemana: 'asc' }, { horarioInicio: 'asc' }],
     })
 
-    // Pré-carrega reservas do aluno no período + contagem de confirmadas por instância.
+    // Pré-carrega reservas do aluno no período + reservas confirmadas
+    // (todas) para contagem por instância. Evitamos groupBy (problemático
+    // com Prisma extensions) — agregamos em JS, o volume é pequeno.
     const datas = rangeDatas(hoje, ate)
-    const [reservasMinhas, contagens] = await Promise.all([
+    const [reservasMinhas, todasConfirmadas] = await Promise.all([
       this.db.reserva.findMany({
         where: {
           alunoId: aluno.id,
@@ -81,14 +85,12 @@ export class PortalAlunoService {
         },
         select: { id: true, aulaId: true, dataAula: true, status: true, posicaoEspera: true },
       }),
-      // Agregado: confirmadas por (aulaId, dataAula).
-      this.db.reserva.groupBy({
-        by: ['aulaId', 'dataAula'],
+      this.db.reserva.findMany({
         where: {
           dataAula: { gte: hoje, lte: ate },
           status: 'CONFIRMADA',
         },
-        _count: true,
+        select: { aulaId: true, dataAula: true },
       }),
     ])
 
@@ -98,9 +100,12 @@ export class PortalAlunoService {
     const reservasIdx = new Map(reservasMinhas.map(r =>
       [chaveReserva(r.aulaId, r.dataAula), r] as const,
     ))
-    const contagemIdx = new Map(contagens.map(c =>
-      [chaveReserva(c.aulaId, c.dataAula), c._count] as const,
-    ))
+
+    const contagemIdx = new Map<string, number>()
+    for (const r of todasConfirmadas) {
+      const k = chaveReserva(r.aulaId, r.dataAula)
+      contagemIdx.set(k, (contagemIdx.get(k) ?? 0) + 1)
+    }
 
     // Modalidades liberadas pelo plano (ou todas, se acessoLivre).
     const modalidadesLiberadasIds = matricula?.plano.acessoLivre

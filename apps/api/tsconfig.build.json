@@ -5,5 +5,8 @@
     "declaration": false,
     "sourceMap": false
   },
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+  // Sobrescreve o include do tsconfig.json — no build, só compilamos src/.
+  // O prisma/seed.ts roda via tsx em runtime, não precisa ir no dist.
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "prisma", "**/*.test.ts", "**/*.spec.ts"]
 }

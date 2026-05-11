@@ -72,6 +72,7 @@ export class MatriculasService {
 
     return this.db.matricula.create({
       data: {
+        academiaId: this.academiaId,
         alunoId: input.alunoId,
         planoId: input.planoId,
         dataInicio,

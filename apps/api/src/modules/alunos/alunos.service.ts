@@ -85,6 +85,7 @@ export class AlunosService {
 
     return this.db.aluno.create({
       data: {
+        academiaId: this.academiaId,
         unidadeId: input.unidadeId,
         nome: input.nome.trim(),
         cpf: cpfLimpo,

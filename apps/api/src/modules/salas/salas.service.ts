@@ -39,6 +39,7 @@ export class SalasService {
     await garantirIdsDoTenant({ model: 'unidade', ids: [input.unidadeId], academiaId: this.academiaId })
     return this.db.sala.create({
       data: {
+        academiaId: this.academiaId,
         unidadeId: input.unidadeId,
         nome: input.nome.trim(),
         capacidade: input.capacidade,

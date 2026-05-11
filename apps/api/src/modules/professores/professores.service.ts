@@ -53,6 +53,7 @@ export class ProfessoresService {
     const cpfLimpo = input.cpf?.replace(/\D/g, '') || null
     return this.db.professor.create({
       data: {
+        academiaId: this.academiaId,
         nome: input.nome.trim(),
         cpf: cpfLimpo,
         email: input.email?.toLowerCase().trim() || null,

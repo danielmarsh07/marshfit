@@ -6,7 +6,7 @@ import type { JwtPayload } from '../../shared/plugins/auth.plugin.js'
 
 export async function portalAlunoRoutes(app: FastifyInstance) {
   function makeService(req: import('fastify').FastifyRequest) {
-    return new PortalAlunoService(req.tenant.db, req.tenant.academiaId)
+    return new PortalAlunoService(req.tenant.db)
   }
 
   // GET /portal/me — dados do aluno logado (perfil + plano + unidade)

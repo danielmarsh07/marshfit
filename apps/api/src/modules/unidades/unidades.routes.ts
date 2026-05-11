@@ -22,7 +22,7 @@ export async function unidadesRoutes(app: FastifyInstance) {
     preHandler: [app.authenticate, app.requireTenant],
     handler: async (request) => {
       const q = request.query as Record<string, string>
-      const service = new UnidadesService(request.tenant.db)
+      const service = new UnidadesService(request.tenant.db, request.tenant.academiaId)
       const lista = await service.listar({
         busca: q.busca,
         ativo: q.ativo === 'false' ? false : q.ativo === 'true' ? true : undefined,
@@ -36,7 +36,7 @@ export async function unidadesRoutes(app: FastifyInstance) {
     preHandler: [app.authenticate, app.requireTenant],
     handler: async (request) => {
       const id = Number((request.params as { id: string }).id)
-      const service = new UnidadesService(request.tenant.db)
+      const service = new UnidadesService(request.tenant.db, request.tenant.academiaId)
       return service.buscar(id)
     },
   })
@@ -46,7 +46,7 @@ export async function unidadesRoutes(app: FastifyInstance) {
     preHandler: [app.authorize(...PAPEIS_ADMIN), app.requireTenant],
     handler: async (request, reply) => {
       const data = unidadeBodySchema.parse(request.body)
-      const service = new UnidadesService(request.tenant.db)
+      const service = new UnidadesService(request.tenant.db, request.tenant.academiaId)
       const criada = await service.criar({ ...data, email: data.email || undefined })
       return reply.status(201).send(criada)
     },
@@ -58,7 +58,7 @@ export async function unidadesRoutes(app: FastifyInstance) {
     handler: async (request) => {
       const id = Number((request.params as { id: string }).id)
       const data = partialSchema.parse(request.body)
-      const service = new UnidadesService(request.tenant.db)
+      const service = new UnidadesService(request.tenant.db, request.tenant.academiaId)
       return service.atualizar(id, { ...data, email: data.email || undefined })
     },
   })
@@ -68,7 +68,7 @@ export async function unidadesRoutes(app: FastifyInstance) {
     preHandler: [app.authorize(...PAPEIS_ADMIN), app.requireTenant],
     handler: async (request) => {
       const id = Number((request.params as { id: string }).id)
-      const service = new UnidadesService(request.tenant.db)
+      const service = new UnidadesService(request.tenant.db, request.tenant.academiaId)
       return service.excluir(id)
     },
   })

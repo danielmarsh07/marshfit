@@ -10,10 +10,6 @@ const loginSchema = z.object({
   senha: z.string().min(1, 'Senha obrigatória'),
 })
 
-const selecionarAcademiaSchema = z.object({
-  academiaId: z.number().int().positive(),
-})
-
 export async function authRoutes(app: FastifyInstance) {
   const service = new AuthService()
 

@@ -105,6 +105,7 @@ export class AulasService {
 
     return this.db.aula.create({
       data: {
+        academiaId: this.academiaId,
         unidadeId: input.unidadeId,
         modalidadeId: input.modalidadeId,
         professorId: input.professorId,

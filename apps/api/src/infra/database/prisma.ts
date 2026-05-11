@@ -99,7 +99,9 @@ export function prismaTenant(academiaId: number, opts?: { bypass?: boolean }) {
                 `[tenantScope] Tentativa de criar ${model} em academia diferente do contexto (got=${data.academiaId}, expected=${academiaId})`,
               )
             }
-            args.data = { ...data, academiaId }
+            // Cast pra any: o tipo union de todos os creates é incompatível,
+            // mas em runtime cada model só recebe seus próprios campos.
+            args.data = { ...data, academiaId } as typeof args.data
           }
           return query(args)
         },

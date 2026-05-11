@@ -48,6 +48,7 @@ export class TreinosService {
     }
     return this.db.treino.create({
       data: {
+        academiaId: this.academiaId,
         nome: input.nome.trim(),
         modalidadeId: input.modalidadeId ?? null,
         nivel: input.nivel ?? null,
