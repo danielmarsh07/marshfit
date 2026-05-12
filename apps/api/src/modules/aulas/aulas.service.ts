@@ -17,6 +17,10 @@ export interface AulaInput {
   ativa?: boolean
 }
 
+export interface AulaInputMultiplosDias extends Omit<AulaInput, 'diaSemana'> {
+  diasSemana: number[]    // 0..6, sem repetição
+}
+
 const INCLUDE_AULA = {
   unidade:    { select: { id: true, nome: true } },
   modalidade: { select: { id: true, nome: true, cor: true } },
@@ -121,6 +125,60 @@ export class AulasService {
       },
       include: INCLUDE_AULA,
     })
+  }
+
+  /**
+   * Cria a mesma aula em vários dias da semana de uma só vez.
+   * Usado pelo "replicar" do form: o usuário escolhe Seg/Qua/Sex e a
+   * gente materializa 3 turmas recorrentes em uma transação.
+   */
+  async criarMultiplosDias(input: AulaInputMultiplosDias) {
+    this.validarHorarios(input.horarioInicio, input.horarioFim)
+    const dias = Array.from(new Set(input.diasSemana))
+    if (dias.length === 0) throw criarErro(400, 'Selecione ao menos um dia da semana')
+    for (const d of dias) this.validarDiaSemana(d)
+
+    await Promise.all([
+      garantirIdsDoTenant({ model: 'unidade',    ids: [input.unidadeId],    academiaId: this.academiaId }),
+      garantirIdsDoTenant({ model: 'modalidade', ids: [input.modalidadeId], academiaId: this.academiaId }),
+      garantirIdsDoTenant({ model: 'professor',  ids: [input.professorId],  academiaId: this.academiaId }),
+      garantirIdsDoTenant({ model: 'sala',       ids: [input.salaId],       academiaId: this.academiaId }),
+      input.treinoId
+        ? garantirIdsDoTenant({ model: 'treino', ids: [input.treinoId], academiaId: this.academiaId })
+        : Promise.resolve(),
+    ])
+
+    const sala = await this.db.sala.findFirst({ where: { id: input.salaId } })
+    if (sala?.unidadeId !== input.unidadeId) {
+      throw criarErro(400, 'A sala selecionada não pertence à unidade escolhida')
+    }
+    if (sala && input.capacidade > sala.capacidade) {
+      throw criarErro(400, `Capacidade (${input.capacidade}) maior que a da sala (${sala.capacidade})`)
+    }
+
+    const baseData = {
+      academiaId: this.academiaId,
+      unidadeId: input.unidadeId,
+      modalidadeId: input.modalidadeId,
+      professorId: input.professorId,
+      salaId: input.salaId,
+      nome: input.nome?.trim() || null,
+      horarioInicio: input.horarioInicio,
+      horarioFim: input.horarioFim,
+      capacidade: input.capacidade,
+      permiteListaEspera: input.permiteListaEspera ?? true,
+      treinoId: input.treinoId ?? null,
+      ativa: input.ativa ?? true,
+    }
+
+    return this.db.$transaction(
+      dias.map(diaSemana =>
+        this.db.aula.create({
+          data: { ...baseData, diaSemana },
+          include: INCLUDE_AULA,
+        }),
+      ),
+    )
   }
 
   async atualizar(id: number, input: Partial<AulaInput>) {

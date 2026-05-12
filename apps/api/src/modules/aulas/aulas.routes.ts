@@ -5,7 +5,24 @@ import { PAPEIS_GESTAO } from '../../shared/utils/permissions.js'
 
 const horario = z.string().regex(/^\d{2}:\d{2}$/, 'Use HH:MM')
 
-const bodySchema = z.object({
+// Create: aceita 1+ dias da semana (gera 1 Aula por dia em transação).
+const criarSchema = z.object({
+  unidadeId:           z.number().int().positive(),
+  modalidadeId:        z.number().int().positive(),
+  professorId:         z.number().int().positive(),
+  salaId:              z.number().int().positive(),
+  nome:                z.string().max(120).optional(),
+  diasSemana:          z.array(z.number().int().min(0).max(6)).min(1, 'Selecione ao menos um dia'),
+  horarioInicio:       horario,
+  horarioFim:          horario,
+  capacidade:          z.number().int().min(1).max(2000),
+  permiteListaEspera:  z.boolean().optional(),
+  treinoId:            z.number().int().positive().optional(),
+  ativa:               z.boolean().optional(),
+})
+
+// Edit: edita 1 aula específica (mantém diaSemana único).
+const editarSchema = z.object({
   unidadeId:           z.number().int().positive(),
   modalidadeId:        z.number().int().positive(),
   professorId:         z.number().int().positive(),
@@ -18,9 +35,7 @@ const bodySchema = z.object({
   permiteListaEspera:  z.boolean().optional(),
   treinoId:            z.number().int().positive().optional(),
   ativa:               z.boolean().optional(),
-})
-
-const partialSchema = bodySchema.partial()
+}).partial()
 
 export async function aulasRoutes(app: FastifyInstance) {
   function makeService(req: import('fastify').FastifyRequest) {
@@ -66,8 +81,9 @@ export async function aulasRoutes(app: FastifyInstance) {
   app.post('/', {
     preHandler: [app.authorize(...PAPEIS_GESTAO), app.requireTenant],
     handler: async (request, reply) => {
-      const data = bodySchema.parse(request.body)
-      return reply.status(201).send(await makeService(request).criar(data))
+      const data = criarSchema.parse(request.body)
+      const aulas = await makeService(request).criarMultiplosDias(data)
+      return reply.status(201).send(aulas)
     },
   })
 
@@ -75,7 +91,7 @@ export async function aulasRoutes(app: FastifyInstance) {
     preHandler: [app.authorize(...PAPEIS_GESTAO), app.requireTenant],
     handler: async (request) => {
       const id = Number((request.params as { id: string }).id)
-      const data = partialSchema.parse(request.body)
+      const data = editarSchema.parse(request.body)
       return makeService(request).atualizar(id, data)
     },
   })

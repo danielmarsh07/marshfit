@@ -43,13 +43,15 @@ type GradeSemanal = Record<string, Aula[]>
 const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 const DIAS_CURTO = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
+// Form único usado para criar e editar. No create, diasSemana pode ter N dias.
+// No edit, é sempre length=1 (a UI mostra um select de dia único).
 const schema = z.object({
   unidadeId:           z.coerce.number().int().positive('Selecione a unidade'),
   modalidadeId:        z.coerce.number().int().positive('Selecione a modalidade'),
   professorId:         z.coerce.number().int().positive('Selecione o professor'),
   salaId:              z.coerce.number().int().positive('Selecione a sala'),
   nome:                z.string().max(120).optional(),
-  diaSemana:           z.coerce.number().int().min(0).max(6),
+  diasSemana:          z.array(z.number().int().min(0).max(6)).min(1, 'Selecione ao menos um dia'),
   horarioInicio:       z.string().regex(/^\d{2}:\d{2}$/, 'Use HH:MM'),
   horarioFim:          z.string().regex(/^\d{2}:\d{2}$/, 'Use HH:MM'),
   capacidade:          z.coerce.number().int().min(1).max(2000),
@@ -101,7 +103,11 @@ export function AulasPage() {
 
   const salvar = useMutation({
     mutationFn: async (data: Form) => {
-      if (editando) return api.put(`/aulas/${editando.id}`, data)
+      // Edit: PUT envia 1 dia só. Create: POST envia o array completo.
+      if (editando) {
+        const { diasSemana, ...rest } = data
+        return api.put(`/aulas/${editando.id}`, { ...rest, diaSemana: diasSemana[0] })
+      }
       return api.post('/aulas', data)
     },
     onSuccess: () => {
@@ -300,7 +306,7 @@ function AulaFormModal({
   salvando: boolean
   erro: string | null
 }) {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<Form>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(schema),
     defaultValues: aula ? {
       unidadeId: aula.unidadeId,
@@ -308,31 +314,45 @@ function AulaFormModal({
       professorId: aula.professorId,
       salaId: aula.salaId,
       nome: aula.nome ?? '',
-      diaSemana: aula.diaSemana,
+      diasSemana: [aula.diaSemana],
       horarioInicio: aula.horarioInicio,
       horarioFim: aula.horarioFim,
       capacidade: aula.capacidade,
       permiteListaEspera: aula.permiteListaEspera,
       treinoId: aula.treinoId ?? undefined,
       ativa: aula.ativa,
-    } : { permiteListaEspera: true, ativa: true } as Form,
+    } : { diasSemana: [] as number[], permiteListaEspera: true, ativa: true } as Form,
   })
 
   const unidadeIdSel = watch('unidadeId')
+  const diasSel = watch('diasSemana') ?? []
   const salasFiltradas = useMemo(
     () => salas.filter(s => !s.unidade || s.unidade.id === Number(unidadeIdSel) || !unidadeIdSel),
     [salas, unidadeIdSel],
   )
 
+  function toggleDia(d: number) {
+    const tem = diasSel.includes(d)
+    setValue('diasSemana', tem ? diasSel.filter(x => x !== d) : [...diasSel, d].sort(), { shouldValidate: true })
+  }
+
   return (
     <Modal
       open onClose={onClose}
-      titulo={aula ? 'Editar aula' : 'Nova aula'}
+      titulo={
+        aula
+          ? 'Editar aula'
+          : diasSel.length > 1
+            ? `Nova aula × ${diasSel.length} dias`
+            : 'Nova aula'
+      }
       tamanho="lg"
       rodape={
         <>
           <Button variante="secondary" onClick={onClose}>Cancelar</Button>
-          <Button onClick={handleSubmit(onSubmit)} loading={salvando}>{aula ? 'Salvar' : 'Cadastrar'}</Button>
+          <Button onClick={handleSubmit(onSubmit)} loading={salvando}>
+            {aula ? 'Salvar' : diasSel.length > 1 ? `Cadastrar ${diasSel.length} aulas` : 'Cadastrar'}
+          </Button>
         </>
       }
     >
@@ -373,23 +393,71 @@ function AulaFormModal({
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Field label="Dia da semana" erro={errors.diaSemana?.message} obrigatorio>
-            <Select {...register('diaSemana')}>
-              <option value="">—</option>
-              {DIAS.map((d, i) => <option key={i} value={i}>{d}</option>)}
-            </Select>
-          </Field>
-          <Field label="Início" erro={errors.horarioInicio?.message} obrigatorio>
-            <Input {...register('horarioInicio')} type="time" />
-          </Field>
-          <Field label="Fim" erro={errors.horarioFim?.message} obrigatorio>
-            <Input {...register('horarioFim')} type="time" />
-          </Field>
-          <Field label="Capacidade" erro={errors.capacidade?.message} obrigatorio>
-            <Input {...register('capacidade')} type="number" min={1} placeholder="14" />
-          </Field>
-        </div>
+        {aula ? (
+          // Edit: dia único.
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Field label="Dia da semana" erro={errors.diasSemana?.message} obrigatorio>
+              <Select
+                value={String(diasSel[0] ?? '')}
+                onChange={(e) => setValue('diasSemana', [Number(e.target.value)], { shouldValidate: true })}
+              >
+                <option value="">—</option>
+                {DIAS.map((d, i) => <option key={i} value={i}>{d}</option>)}
+              </Select>
+            </Field>
+            <Field label="Início" erro={errors.horarioInicio?.message} obrigatorio>
+              <Input {...register('horarioInicio')} type="time" />
+            </Field>
+            <Field label="Fim" erro={errors.horarioFim?.message} obrigatorio>
+              <Input {...register('horarioFim')} type="time" />
+            </Field>
+            <Field label="Capacidade" erro={errors.capacidade?.message} obrigatorio>
+              <Input {...register('capacidade')} type="number" min={1} placeholder="14" />
+            </Field>
+          </div>
+        ) : (
+          <>
+            {/* Create: replicar para vários dias. */}
+            <Field
+              label="Dias da semana"
+              erro={errors.diasSemana?.message}
+              hint="Selecione um ou mais dias — uma turma será criada para cada."
+              obrigatorio
+            >
+              <div className="flex flex-wrap gap-2 mt-1">
+                {DIAS_CURTO.map((label, i) => {
+                  const ativo = diasSel.includes(i)
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => toggleDia(i)}
+                      className={`px-3.5 py-2 rounded-lg text-sm font-medium border transition ${
+                        ativo
+                          ? 'bg-slate-900 text-white border-slate-900'
+                          : 'bg-white text-slate-700 border-slate-300 hover:border-slate-500'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </Field>
+
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Início" erro={errors.horarioInicio?.message} obrigatorio>
+                <Input {...register('horarioInicio')} type="time" />
+              </Field>
+              <Field label="Fim" erro={errors.horarioFim?.message} obrigatorio>
+                <Input {...register('horarioFim')} type="time" />
+              </Field>
+              <Field label="Capacidade" erro={errors.capacidade?.message} obrigatorio>
+                <Input {...register('capacidade')} type="number" min={1} placeholder="14" />
+              </Field>
+            </div>
+          </>
+        )}
 
         <Field label="Treino padrão (opcional)" hint="Aparece como sugestão para os alunos.">
           <Select {...register('treinoId')}>
