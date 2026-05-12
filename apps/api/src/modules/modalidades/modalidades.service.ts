@@ -2,6 +2,7 @@ import type { PrismaTenantClient } from '../../infra/database/prisma.js'
 import { criarErro } from '../../shared/utils/errors.js'
 
 export interface ModalidadeInput {
+  unidadeId: number
   nome: string
   cor?: string
   icone?: string
@@ -33,6 +34,7 @@ export class ModalidadesService {
     return this.db.modalidade.create({
       data: {
         academiaId: this.academiaId,
+        unidadeId: input.unidadeId,
         nome: input.nome.trim(),
         cor: input.cor || null,
         icone: input.icone || null,

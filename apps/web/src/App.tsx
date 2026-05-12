@@ -14,6 +14,7 @@ import { AlunoDetalhe } from '@/pages/admin/AlunoDetalhe'
 import { AulasPage } from '@/pages/admin/AulasPage'
 import { AulasHojePage } from '@/pages/admin/AulasHojePage'
 import { TreinosPage } from '@/pages/admin/TreinosPage'
+import { UsuariosPage } from '@/pages/admin/UsuariosPage'
 import { HomeAlunoPage } from '@/pages/aluno/HomeAlunoPage'
 import { ProgramacaoPage } from '@/pages/aluno/ProgramacaoPage'
 import { MinhasReservasPage } from '@/pages/aluno/MinhasReservasPage'
@@ -76,6 +77,7 @@ export default function App() {
         <Route path="/alunos/:id"    element={<AlunoDetalhe />} />
         <Route path="/aulas"         element={<AulasPage />} />
         <Route path="/treinos"       element={<TreinosPage />} />
+        <Route path="/usuarios"      element={<UsuariosPage />} />
 
         <Route path="/financeiro"    element={<PlaceholderPage titulo="Financeiro" descricao="Mensalidades, contas a pagar e baixa — Fase 6." />} />
         <Route path="/configuracoes" element={<PlaceholderPage titulo="Configurações" />} />

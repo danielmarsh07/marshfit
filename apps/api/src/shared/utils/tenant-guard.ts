@@ -9,7 +9,7 @@ import { criarErro } from './errors.js'
  * em relações M:N — então usamos esse helper nos services antes de gravar.
  */
 export async function garantirIdsDoTenant(opts: {
-  model: 'modalidade' | 'unidade' | 'sala' | 'professor' | 'plano' | 'aluno' | 'aula' | 'treino' | 'reserva'
+  model: 'modalidade' | 'unidade' | 'sala' | 'professor' | 'plano' | 'aluno' | 'aula' | 'treino' | 'reserva' | 'matricula'
   ids: number[]
   academiaId: number
 }): Promise<void> {

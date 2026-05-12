@@ -8,8 +8,7 @@ export const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
 })
 
-// Lista de models tenant-scoped — ampliar conforme entidades de domínio
-// (Aula, Reserva, Checkin, etc) forem criadas nas Fases 4+.
+// Lista de models tenant-scoped (filtrados por academiaId).
 export const TENANT_SCOPED_MODELS = new Set<string>([
   'Unidade',
   'Modalidade',
@@ -23,6 +22,20 @@ export const TENANT_SCOPED_MODELS = new Set<string>([
   'Reserva',
   'Checkin',
   // 'Mensalidade', 'ContaPagar', 'Aviso',
+])
+
+// Models que ALÉM de academiaId também têm unidadeId — quando o usuário é
+// GESTOR_UNIDADE / PROFESSOR / RECEPCAO, queremos forçar também o filtro
+// pela unidade dele. Matricula NÃO está aqui porque é filha de Aluno (que
+// já tem unidadeId) — filtramos via Aluno.unidadeId no service quando preciso.
+export const UNIT_SCOPED_MODELS = new Set<string>([
+  'Modalidade',
+  'Sala',
+  'Professor',
+  'Plano',
+  'Aluno',
+  'Aula',
+  'Treino',
 ])
 
 /**
@@ -111,3 +124,75 @@ export function prismaTenant(academiaId: number, opts?: { bypass?: boolean }) {
 }
 
 export type PrismaTenantClient = ReturnType<typeof prismaTenant>
+
+/**
+ * Variante do prismaTenant que ALÉM de academiaId, força filtro por unidadeId
+ * em models UNIT_SCOPED. Usado para usuários com papel restrito a uma unidade
+ * (GESTOR_UNIDADE, PROFESSOR, RECEPCAO).
+ *
+ * Funciona em duas camadas: primeiro aplica academiaId (via prismaTenant),
+ * depois um segundo $extends que adiciona unidadeId onde aplicável.
+ */
+export function prismaTenantUnidade(academiaId: number, unidadeId: number) {
+  return prismaTenant(academiaId).$extends({
+    name: 'unidadeScope',
+    query: {
+      $allModels: {
+        async findMany({ model, args, query }) {
+          if (UNIT_SCOPED_MODELS.has(model)) {
+            args.where = { ...args.where, unidadeId }
+          }
+          return query(args)
+        },
+        async findFirst({ model, args, query }) {
+          if (UNIT_SCOPED_MODELS.has(model)) {
+            args.where = { ...args.where, unidadeId }
+          }
+          return query(args)
+        },
+        async count({ model, args, query }) {
+          if (UNIT_SCOPED_MODELS.has(model)) {
+            args.where = { ...args.where, unidadeId }
+          }
+          return query(args)
+        },
+        async update({ model, args, query }) {
+          if (UNIT_SCOPED_MODELS.has(model)) {
+            args.where = { ...args.where, unidadeId }
+          }
+          return query(args)
+        },
+        async updateMany({ model, args, query }) {
+          if (UNIT_SCOPED_MODELS.has(model)) {
+            args.where = { ...args.where, unidadeId }
+          }
+          return query(args)
+        },
+        async delete({ model, args, query }) {
+          if (UNIT_SCOPED_MODELS.has(model)) {
+            args.where = { ...args.where, unidadeId }
+          }
+          return query(args)
+        },
+        async deleteMany({ model, args, query }) {
+          if (UNIT_SCOPED_MODELS.has(model)) {
+            args.where = { ...args.where, unidadeId }
+          }
+          return query(args)
+        },
+        async create({ model, args, query }) {
+          if (UNIT_SCOPED_MODELS.has(model)) {
+            const data = args.data as Record<string, unknown>
+            if (data.unidadeId !== undefined && data.unidadeId !== unidadeId) {
+              throw new Error(
+                `[unidadeScope] Tentativa de criar ${model} em unidade diferente do contexto (got=${data.unidadeId}, expected=${unidadeId})`,
+              )
+            }
+            args.data = { ...data, unidadeId } as typeof args.data
+          }
+          return query(args)
+        },
+      },
+    },
+  })
+}

@@ -4,6 +4,7 @@ import { garantirIdsDoTenant } from '../../shared/utils/tenant-guard.js'
 import type { Periodicidade } from '@prisma/client'
 
 export interface PlanoInput {
+  unidadeId: number
   nome: string
   descricao?: string
   valor: number
@@ -46,6 +47,7 @@ export class PlanosService {
     return this.db.plano.create({
       data: {
         academiaId: this.academiaId,
+        unidadeId: input.unidadeId,
         nome: input.nome.trim(),
         descricao: input.descricao || null,
         valor: input.valor,

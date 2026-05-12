@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil } from 'lucide-react'
+import { Plus, Pencil, MapPin } from 'lucide-react'
 import { api } from '@/services/api'
 import { Modal } from '@/components/ui/Modal'
 import { Field, Input, Select, Textarea } from '@/components/ui/Field'
@@ -11,10 +11,12 @@ import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { mensagemDeErro } from '@/lib/erro'
 
-interface Modalidade { id: number; nome: string; cor: string | null }
+interface Unidade { id: number; nome: string }
+interface Modalidade { id: number; unidadeId: number; nome: string; cor: string | null }
 
 interface Plano {
   id: number
+  unidadeId: number
   nome: string
   descricao: string | null
   valor: string  // Decimal vem como string do Prisma
@@ -26,6 +28,7 @@ interface Plano {
 }
 
 const schema = z.object({
+  unidadeId:      z.coerce.number().int().positive('Selecione a unidade'),
   nome:           z.string().min(2).max(120),
   descricao:      z.string().max(2000).optional(),
   valor:          z.coerce.number().nonnegative().max(99999999),
@@ -54,6 +57,11 @@ export function PlanosPage() {
   const [editando, setEditando] = useState<Plano | null>(null)
   const [modal, setModal] = useState(false)
 
+  const { data: unidades = [] } = useQuery({
+    queryKey: ['unidades', 'ativas'],
+    queryFn: async () => (await api.get<Unidade[]>('/unidades?ativo=true')).data,
+  })
+
   const { data: planos = [], isLoading } = useQuery({
     queryKey: ['planos'],
     queryFn: async () => (await api.get<Plano[]>('/planos')).data,
@@ -66,11 +74,16 @@ export function PlanosPage() {
 
   const salvar = useMutation({
     mutationFn: async (data: Form) => {
-      if (editando) return api.put(`/planos/${editando.id}`, data)
+      if (editando) {
+        const { unidadeId: _u, ...rest } = data
+        return api.put(`/planos/${editando.id}`, rest)
+      }
       return api.post('/planos', data)
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['planos'] }); setModal(false); setEditando(null) },
   })
+
+  const mapUnidade = new Map(unidades.map(u => [u.id, u.nome]))
 
   return (
     <div>
@@ -103,6 +116,9 @@ export function PlanosPage() {
                 <Pencil className="h-4 w-4 text-slate-400" />
               </div>
               <div className="mt-3 text-xs text-slate-600 space-y-0.5">
+                <div className="flex items-center gap-1 text-slate-500">
+                  <MapPin className="h-3 w-3" /> {mapUnidade.get(p.unidadeId) ?? '—'}
+                </div>
                 {p.acessoLivre
                   ? <div>✓ Acesso livre a todas as modalidades</div>
                   : <div>{p.modalidades.length} modalidade(s) liberada(s)</div>
@@ -118,6 +134,7 @@ export function PlanosPage() {
       {modal && (
         <PlanoFormModal
           plano={editando}
+          unidades={unidades}
           modalidades={modalidades}
           onClose={() => { setModal(false); setEditando(null) }}
           onSubmit={(d) => salvar.mutate(d)}
@@ -130,18 +147,20 @@ export function PlanosPage() {
 }
 
 function PlanoFormModal({
-  plano, modalidades, onClose, onSubmit, salvando, erro,
+  plano, unidades, modalidades, onClose, onSubmit, salvando, erro,
 }: {
   plano: Plano | null
+  unidades: Unidade[]
   modalidades: Modalidade[]
   onClose: () => void
   onSubmit: (d: Form) => void
   salvando: boolean
   erro: string | null
 }) {
-  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<Form>({
+  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(schema),
     defaultValues: plano ? {
+      unidadeId: plano.unidadeId,
       nome: plano.nome,
       descricao: plano.descricao ?? '',
       valor: Number(plano.valor),
@@ -150,10 +169,21 @@ function PlanoFormModal({
       acessoLivre: plano.acessoLivre,
       modalidadeIds: plano.modalidades.map(m => m.id),
       ativo: plano.ativo,
-    } : { periodicidade: 'MENSAL', acessoLivre: false, ativo: true, modalidadeIds: [] } as Form,
+    } : { periodicidade: 'MENSAL', acessoLivre: false, ativo: true, modalidadeIds: [] as number[] } as Form,
   })
 
   const acessoLivre = watch('acessoLivre')
+  const unidadeIdSel = watch('unidadeId')
+
+  // Pré-seleciona quando há só 1 unidade.
+  useEffect(() => {
+    if (!plano && unidades.length === 1) {
+      setValue('unidadeId', unidades[0].id)
+    }
+  }, [plano, unidades, setValue])
+
+  // Filtra modalidades pela unidade do plano (só faz sentido vincular as da mesma unidade).
+  const modalidadesFiltradas = modalidades.filter(m => !unidadeIdSel || m.unidadeId === Number(unidadeIdSel))
 
   return (
     <Modal
@@ -168,6 +198,14 @@ function PlanoFormModal({
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+        {!plano && (
+          <Field label="Unidade" erro={errors.unidadeId?.message} obrigatorio>
+            <Select {...register('unidadeId')}>
+              <option value="">Selecione…</option>
+              {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+            </Select>
+          </Field>
+        )}
         <Field label="Nome do plano" erro={errors.nome?.message} obrigatorio>
           <Input {...register('nome')} placeholder="Mensal, Trimestral, Plus, etc" />
         </Field>
@@ -203,7 +241,7 @@ function PlanoFormModal({
               name="modalidadeIds"
               render={({ field }) => (
                 <div className="flex flex-wrap gap-2">
-                  {modalidades.map(m => {
+                  {modalidadesFiltradas.map(m => {
                     const sel = field.value?.includes(m.id) ?? false
                     return (
                       <button type="button" key={m.id}
@@ -217,7 +255,11 @@ function PlanoFormModal({
                       </button>
                     )
                   })}
-                  {modalidades.length === 0 && <span className="text-xs text-slate-500">Cadastre modalidades primeiro.</span>}
+                  {modalidadesFiltradas.length === 0 && (
+                    <span className="text-xs text-slate-500">
+                      {unidadeIdSel ? 'Cadastre modalidades nesta unidade primeiro.' : 'Selecione a unidade.'}
+                    </span>
+                  )}
                 </div>
               )}
             />

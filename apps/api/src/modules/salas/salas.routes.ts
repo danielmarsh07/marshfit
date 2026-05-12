@@ -2,15 +2,21 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { SalasService } from './salas.service.js'
 import { PAPEIS_GESTAO } from '../../shared/utils/permissions.js'
+import { unidadeIdParaCriar } from '../../shared/utils/unidade.js'
 
-const bodySchema = z.object({
-  unidadeId:  z.number().int().positive(),
+const criarSchema = z.object({
+  unidadeId:  z.number().int().positive().optional(),
   nome:       z.string().min(1).max(80),
   capacidade: z.number().int().min(1).max(2000),
   ativo:      z.boolean().optional(),
 })
 
-const partialSchema = bodySchema.partial()
+const editarSchema = z.object({
+  unidadeId:  z.number().int().positive(),
+  nome:       z.string().min(1).max(80),
+  capacidade: z.number().int().min(1).max(2000),
+  ativo:      z.boolean().optional(),
+}).partial()
 
 export async function salasRoutes(app: FastifyInstance) {
   function makeService(req: import('fastify').FastifyRequest) {
@@ -40,8 +46,9 @@ export async function salasRoutes(app: FastifyInstance) {
   app.post('/', {
     preHandler: [app.authorize(...PAPEIS_GESTAO), app.requireTenant],
     handler: async (request, reply) => {
-      const data = bodySchema.parse(request.body)
-      return reply.status(201).send(await makeService(request).criar(data))
+      const data = criarSchema.parse(request.body)
+      const unidadeId = unidadeIdParaCriar(request.tenant, data.unidadeId)
+      return reply.status(201).send(await makeService(request).criar({ ...data, unidadeId }))
     },
   })
 
@@ -49,7 +56,7 @@ export async function salasRoutes(app: FastifyInstance) {
     preHandler: [app.authorize(...PAPEIS_GESTAO), app.requireTenant],
     handler: async (request) => {
       const id = Number((request.params as { id: string }).id)
-      const data = partialSchema.parse(request.body)
+      const data = editarSchema.parse(request.body)
       return makeService(request).atualizar(id, data)
     },
   })

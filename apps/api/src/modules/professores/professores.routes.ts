@@ -2,8 +2,11 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { ProfessoresService } from './professores.service.js'
 import { PAPEIS_GESTAO } from '../../shared/utils/permissions.js'
+import { unidadeIdParaCriar } from '../../shared/utils/unidade.js'
+import { garantirIdsDoTenant } from '../../shared/utils/tenant-guard.js'
 
-const bodySchema = z.object({
+const criarSchema = z.object({
+  unidadeId:     z.number().int().positive().optional(),
   nome:          z.string().min(2).max(120),
   cpf:           z.string().max(20).optional(),
   email:         z.string().email().optional().or(z.literal('')),
@@ -13,7 +16,15 @@ const bodySchema = z.object({
   ativo:         z.boolean().optional(),
 })
 
-const partialSchema = bodySchema.partial()
+const editarSchema = z.object({
+  nome:          z.string().min(2).max(120),
+  cpf:           z.string().max(20).optional(),
+  email:         z.string().email().optional().or(z.literal('')),
+  telefone:      z.string().min(8).max(20),
+  observacoes:   z.string().max(2000).optional(),
+  modalidadeIds: z.array(z.number().int().positive()).optional(),
+  ativo:         z.boolean().optional(),
+}).partial()
 
 export async function professoresRoutes(app: FastifyInstance) {
   function makeService(req: import('fastify').FastifyRequest) {
@@ -43,8 +54,14 @@ export async function professoresRoutes(app: FastifyInstance) {
   app.post('/', {
     preHandler: [app.authorize(...PAPEIS_GESTAO), app.requireTenant],
     handler: async (request, reply) => {
-      const data = bodySchema.parse(request.body)
-      return reply.status(201).send(await makeService(request).criar({ ...data, email: data.email || undefined }))
+      const data = criarSchema.parse(request.body)
+      const unidadeId = unidadeIdParaCriar(request.tenant, data.unidadeId)
+      await garantirIdsDoTenant({ model: 'unidade', ids: [unidadeId], academiaId: request.tenant.academiaId })
+      return reply.status(201).send(await makeService(request).criar({
+        ...data,
+        unidadeId,
+        email: data.email || undefined,
+      }))
     },
   })
 
@@ -52,7 +69,7 @@ export async function professoresRoutes(app: FastifyInstance) {
     preHandler: [app.authorize(...PAPEIS_GESTAO), app.requireTenant],
     handler: async (request) => {
       const id = Number((request.params as { id: string }).id)
-      const data = partialSchema.parse(request.body)
+      const data = editarSchema.parse(request.body)
       return makeService(request).atualizar(id, { ...data, email: data.email || undefined })
     },
   })

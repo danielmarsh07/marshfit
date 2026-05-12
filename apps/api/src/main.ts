@@ -26,6 +26,7 @@ import { aulasRoutes } from './modules/aulas/aulas.routes.js'
 import { reservasRoutes } from './modules/reservas/reservas.routes.js'
 import { checkinsRoutes } from './modules/checkins/checkins.routes.js'
 import { portalAlunoRoutes } from './modules/portal-aluno/portal-aluno.routes.js'
+import { usuariosRoutes } from './modules/usuarios/usuarios.routes.js'
 
 const app = Fastify({
   logger: {
@@ -78,6 +79,7 @@ await app.register(aulasRoutes,       { prefix: '/aulas' })
 await app.register(reservasRoutes,    { prefix: '/reservas' })
 await app.register(checkinsRoutes,    { prefix: '/checkins' })
 await app.register(portalAlunoRoutes, { prefix: '/portal' })
+await app.register(usuariosRoutes,    { prefix: '/usuarios' })
 
 // ── Inicializar ───────────────────────────────────────────────────────
 try {

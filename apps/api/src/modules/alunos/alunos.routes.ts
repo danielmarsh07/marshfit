@@ -2,13 +2,14 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { AlunosService } from './alunos.service.js'
 import { PAPEIS_OPERACIONAL } from '../../shared/utils/permissions.js'
+import { unidadeIdParaCriar } from '../../shared/utils/unidade.js'
 import type { AlunoStatus } from '@prisma/client'
 
 const sexoEnum = z.enum(['M', 'F', 'OUTRO'])
 const statusEnum = z.enum(['ATIVO', 'INATIVO', 'CONGELADO', 'INADIMPLENTE'])
 
-const bodySchema = z.object({
-  unidadeId:   z.number().int().positive(),
+const criarSchema = z.object({
+  unidadeId:   z.number().int().positive().optional(),
   nome:        z.string().min(2).max(120),
   cpf:         z.string().max(20).optional(),
   dataNasc:    z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve estar em YYYY-MM-DD').optional(),
@@ -23,7 +24,21 @@ const bodySchema = z.object({
   status:      statusEnum.optional(),
 })
 
-const partialSchema = bodySchema.partial()
+const editarSchema = z.object({
+  unidadeId:   z.number().int().positive(),
+  nome:        z.string().min(2).max(120),
+  cpf:         z.string().max(20).optional(),
+  dataNasc:    z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve estar em YYYY-MM-DD').optional(),
+  sexo:        sexoEnum.optional(),
+  email:       z.string().email().optional().or(z.literal('')),
+  telefone:    z.string().min(8).max(20),
+  endereco:    z.string().max(200).optional(),
+  bairro:      z.string().max(120).optional(),
+  cidade:      z.string().max(120).optional(),
+  estado:      z.string().length(2).optional(),
+  observacoes: z.string().max(2000).optional(),
+  status:      statusEnum.optional(),
+}).partial()
 
 export async function alunosRoutes(app: FastifyInstance) {
   function makeService(req: import('fastify').FastifyRequest) {
@@ -55,8 +70,13 @@ export async function alunosRoutes(app: FastifyInstance) {
   app.post('/', {
     preHandler: [app.authorize(...PAPEIS_OPERACIONAL), app.requireTenant],
     handler: async (request, reply) => {
-      const data = bodySchema.parse(request.body)
-      return reply.status(201).send(await makeService(request).criar({ ...data, email: data.email || undefined }))
+      const data = criarSchema.parse(request.body)
+      const unidadeId = unidadeIdParaCriar(request.tenant, data.unidadeId)
+      return reply.status(201).send(await makeService(request).criar({
+        ...data,
+        unidadeId,
+        email: data.email || undefined,
+      }))
     },
   })
 
@@ -64,7 +84,7 @@ export async function alunosRoutes(app: FastifyInstance) {
     preHandler: [app.authorize(...PAPEIS_OPERACIONAL), app.requireTenant],
     handler: async (request) => {
       const id = Number((request.params as { id: string }).id)
-      const data = partialSchema.parse(request.body)
+      const data = editarSchema.parse(request.body)
       return makeService(request).atualizar(id, { ...data, email: data.email || undefined })
     },
   })

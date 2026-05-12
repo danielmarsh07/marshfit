@@ -2,12 +2,13 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { AulasService } from './aulas.service.js'
 import { PAPEIS_GESTAO } from '../../shared/utils/permissions.js'
+import { unidadeIdParaCriar } from '../../shared/utils/unidade.js'
 
 const horario = z.string().regex(/^\d{2}:\d{2}$/, 'Use HH:MM')
 
 // Create: aceita 1+ dias da semana (gera 1 Aula por dia em transação).
 const criarSchema = z.object({
-  unidadeId:           z.number().int().positive(),
+  unidadeId:           z.number().int().positive().optional(),
   modalidadeId:        z.number().int().positive(),
   professorId:         z.number().int().positive(),
   salaId:              z.number().int().positive(),
@@ -82,7 +83,8 @@ export async function aulasRoutes(app: FastifyInstance) {
     preHandler: [app.authorize(...PAPEIS_GESTAO), app.requireTenant],
     handler: async (request, reply) => {
       const data = criarSchema.parse(request.body)
-      const aulas = await makeService(request).criarMultiplosDias(data)
+      const unidadeId = unidadeIdParaCriar(request.tenant, data.unidadeId)
+      const aulas = await makeService(request).criarMultiplosDias({ ...data, unidadeId })
       return reply.status(201).send(aulas)
     },
   })

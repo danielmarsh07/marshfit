@@ -4,6 +4,7 @@ import { garantirIdsDoTenant } from '../../shared/utils/tenant-guard.js'
 import type { NivelTreino, FormatoTreino } from '@prisma/client'
 
 export interface TreinoInput {
+  unidadeId: number
   nome: string
   modalidadeId?: number
   nivel?: NivelTreino
@@ -49,6 +50,7 @@ export class TreinosService {
     return this.db.treino.create({
       data: {
         academiaId: this.academiaId,
+        unidadeId: input.unidadeId,
         nome: input.nome.trim(),
         modalidadeId: input.modalidadeId ?? null,
         nivel: input.nivel ?? null,

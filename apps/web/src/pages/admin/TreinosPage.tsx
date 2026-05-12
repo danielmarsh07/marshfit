@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil, Clock, Zap } from 'lucide-react'
+import { Plus, Pencil, Clock, Zap, MapPin } from 'lucide-react'
 import { api } from '@/services/api'
 import { Modal } from '@/components/ui/Modal'
 import { Field, Input, Select, Textarea } from '@/components/ui/Field'
@@ -11,13 +11,15 @@ import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { mensagemDeErro } from '@/lib/erro'
 
-interface Modalidade { id: number; nome: string; cor: string | null }
+interface Unidade { id: number; nome: string }
+interface Modalidade { id: number; unidadeId: number; nome: string; cor: string | null }
 
 type Nivel = 'INICIANTE' | 'INTERMEDIARIO' | 'AVANCADO' | 'TODOS'
 type Formato = 'AMRAP' | 'EMOM' | 'FOR_TIME' | 'TABATA' | 'STRENGTH' | 'HIIT' | 'LIVRE'
 
 interface Treino {
   id: number
+  unidadeId: number
   nome: string
   modalidadeId: number | null
   nivel: Nivel | null
@@ -29,6 +31,7 @@ interface Treino {
 }
 
 const schema = z.object({
+  unidadeId:    z.coerce.number().int().positive('Selecione a unidade'),
   nome:         z.string().min(2).max(120),
   modalidadeId: z.union([z.coerce.number().int().positive(), z.literal('')]).optional()
                   .transform(v => v === '' || v === undefined ? undefined : v),
@@ -57,6 +60,11 @@ export function TreinosPage() {
   const [modal, setModal] = useState(false)
   const [busca, setBusca] = useState('')
 
+  const { data: unidades = [] } = useQuery({
+    queryKey: ['unidades', 'ativas'],
+    queryFn: async () => (await api.get<Unidade[]>('/unidades?ativo=true')).data,
+  })
+
   const { data: treinos = [], isLoading } = useQuery({
     queryKey: ['treinos', busca],
     queryFn: async () => (await api.get<Treino[]>(`/treinos${busca ? `?busca=${encodeURIComponent(busca)}` : ''}`)).data,
@@ -69,11 +77,16 @@ export function TreinosPage() {
 
   const salvar = useMutation({
     mutationFn: async (data: Form) => {
-      if (editando) return api.put(`/treinos/${editando.id}`, data)
+      if (editando) {
+        const { unidadeId: _u, ...rest } = data
+        return api.put(`/treinos/${editando.id}`, rest)
+      }
       return api.post('/treinos', data)
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['treinos'] }); setModal(false); setEditando(null) },
   })
+
+  const mapUnidade = new Map(unidades.map(u => [u.id, u.nome]))
 
   return (
     <div>
@@ -123,12 +136,11 @@ export function TreinosPage() {
               <div className="text-xs text-slate-600 mt-2 line-clamp-3 whitespace-pre-wrap">
                 {t.descricao}
               </div>
-              {(t.duracaoMin || !t.ativo) && (
-                <div className="text-xs text-slate-500 mt-2 flex items-center gap-3">
-                  {t.duracaoMin && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {t.duracaoMin} min</span>}
-                  {!t.ativo && <span>Inativo</span>}
-                </div>
-              )}
+              <div className="text-xs text-slate-500 mt-2 flex items-center gap-3 flex-wrap">
+                <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {mapUnidade.get(t.unidadeId) ?? '—'}</span>
+                {t.duracaoMin && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {t.duracaoMin} min</span>}
+                {!t.ativo && <span>Inativo</span>}
+              </div>
             </button>
           ))}
         </div>
@@ -137,6 +149,7 @@ export function TreinosPage() {
       {modal && (
         <TreinoFormModal
           treino={editando}
+          unidades={unidades}
           modalidades={modalidades}
           onClose={() => { setModal(false); setEditando(null) }}
           onSubmit={(d) => salvar.mutate(d)}
@@ -149,18 +162,20 @@ export function TreinosPage() {
 }
 
 function TreinoFormModal({
-  treino, modalidades, onClose, onSubmit, salvando, erro,
+  treino, unidades, modalidades, onClose, onSubmit, salvando, erro,
 }: {
   treino: Treino | null
+  unidades: Unidade[]
   modalidades: Modalidade[]
   onClose: () => void
   onSubmit: (d: Form) => void
   salvando: boolean
   erro: string | null
 }) {
-  const { register, handleSubmit, formState: { errors } } = useForm<Form>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(schema),
     defaultValues: treino ? {
+      unidadeId: treino.unidadeId,
       nome: treino.nome,
       modalidadeId: treino.modalidadeId ?? undefined,
       nivel: treino.nivel ?? undefined,
@@ -170,6 +185,16 @@ function TreinoFormModal({
       ativo: treino.ativo,
     } : { ativo: true } as Form,
   })
+
+  const unidadeIdSel = watch('unidadeId')
+
+  useEffect(() => {
+    if (!treino && unidades.length === 1) {
+      setValue('unidadeId', unidades[0].id)
+    }
+  }, [treino, unidades, setValue])
+
+  const modalidadesFiltradas = modalidades.filter(m => !unidadeIdSel || m.unidadeId === Number(unidadeIdSel))
 
   return (
     <Modal
@@ -182,6 +207,14 @@ function TreinoFormModal({
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+        {!treino && (
+          <Field label="Unidade" erro={errors.unidadeId?.message} obrigatorio>
+            <Select {...register('unidadeId')}>
+              <option value="">Selecione…</option>
+              {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+            </Select>
+          </Field>
+        )}
         <Field label="Nome" erro={errors.nome?.message} obrigatorio>
           <Input {...register('nome')} placeholder="WOD Murph, Ficha A musculação, Fundamentos pilates…" />
         </Field>
@@ -189,7 +222,7 @@ function TreinoFormModal({
           <Field label="Modalidade" hint="Deixe em branco para um treino genérico.">
             <Select {...register('modalidadeId')}>
               <option value="">—</option>
-              {modalidades.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
+              {modalidadesFiltradas.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
             </Select>
           </Field>
           <Field label="Nível">

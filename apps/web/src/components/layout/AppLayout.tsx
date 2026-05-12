@@ -20,6 +20,7 @@ import {
   Home,
   CalendarCheck,
   CalendarDays,
+  UserCog,
 } from 'lucide-react'
 import { APP_VERSION } from '@/changelog'
 import { cn } from '@/lib/cn'
@@ -50,6 +51,7 @@ const MENU: ItemMenu[] = [
   { to: '/salas',         label: 'Salas',        icon: DoorOpen,        papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA', 'GESTOR_UNIDADE'] },
   { to: '/modalidades',   label: 'Modalidades',  icon: Tag,             papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA', 'GESTOR_UNIDADE'] },
   { to: '/financeiro',    label: 'Financeiro',   icon: CreditCard,      papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA', 'FINANCEIRO'] },
+  { to: '/usuarios',      label: 'Usuários',     icon: UserCog,         papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA'] },
   { to: '/configuracoes', label: 'Configurações', icon: Settings,       papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA'] },
 ]
 

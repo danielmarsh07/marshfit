@@ -3,6 +3,7 @@ import { criarErro } from '../../shared/utils/errors.js'
 import { garantirIdsDoTenant } from '../../shared/utils/tenant-guard.js'
 
 export interface ProfessorInput {
+  unidadeId: number
   nome: string
   cpf?: string
   email?: string
@@ -54,6 +55,7 @@ export class ProfessoresService {
     return this.db.professor.create({
       data: {
         academiaId: this.academiaId,
+        unidadeId: input.unidadeId,
         nome: input.nome.trim(),
         cpf: cpfLimpo,
         email: input.email?.toLowerCase().trim() || null,

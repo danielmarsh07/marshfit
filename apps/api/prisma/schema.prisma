@@ -140,6 +140,10 @@ model Unidade {
   salas       Sala[]
   alunos      Aluno[]
   aulas       Aula[]
+  modalidades Modalidade[]
+  professores Professor[]
+  planos      Plano[]
+  treinos     Treino[]
 
   @@index([academiaId])
 }
@@ -152,6 +156,7 @@ model Unidade {
 model Modalidade {
   id          Int       @id @default(autoincrement())
   academiaId  Int
+  unidadeId   Int
   nome        String
   // Cor hex para uso na agenda (#22C55E, etc).
   cor         String?
@@ -162,13 +167,15 @@ model Modalidade {
   criadoEm    DateTime  @default(now())
   atualizadoEm DateTime @updatedAt
 
+  unidade     Unidade     @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
   professores Professor[]
   planos      Plano[]
   aulas       Aula[]
   treinos     Treino[]
 
-  @@unique([academiaId, nome])
+  @@unique([academiaId, unidadeId, nome])
   @@index([academiaId])
+  @@index([academiaId, unidadeId])
 }
 
 // ─────────────────────────────────────────────
@@ -202,6 +209,7 @@ model Sala {
 model Professor {
   id          Int       @id @default(autoincrement())
   academiaId  Int
+  unidadeId   Int
   nome        String
   cpf         String?
   email       String?
@@ -215,11 +223,13 @@ model Professor {
   criadoEm    DateTime  @default(now())
   atualizadoEm DateTime @updatedAt
 
+  unidade     Unidade     @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
   modalidades Modalidade[]
   aulas       Aula[]
 
   @@unique([academiaId, cpf])
   @@index([academiaId])
+  @@index([academiaId, unidadeId])
 }
 
 // ─────────────────────────────────────────────
@@ -230,6 +240,7 @@ model Professor {
 model Plano {
   id              Int           @id @default(autoincrement())
   academiaId      Int
+  unidadeId       Int
   nome            String
   descricao       String?       @db.Text
   // Valor em reais. Decimal(10,2) cobre até 99.999.999,99.
@@ -244,11 +255,13 @@ model Plano {
   criadoEm        DateTime      @default(now())
   atualizadoEm    DateTime      @updatedAt
 
+  unidade         Unidade       @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
   modalidades     Modalidade[]
   matriculas      Matricula[]
 
-  @@unique([academiaId, nome])
+  @@unique([academiaId, unidadeId, nome])
   @@index([academiaId])
+  @@index([academiaId, unidadeId])
 }
 
 // ─────────────────────────────────────────────
@@ -378,6 +391,7 @@ model UsuarioAcademia {
 model Treino {
   id           Int            @id @default(autoincrement())
   academiaId   Int
+  unidadeId    Int
   nome         String
   modalidadeId Int?           // null = treino genérico (qualquer modalidade)
   nivel        NivelTreino?
@@ -389,10 +403,12 @@ model Treino {
   criadoEm     DateTime       @default(now())
   atualizadoEm DateTime       @updatedAt
 
+  unidade      Unidade        @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
   modalidade   Modalidade?    @relation(fields: [modalidadeId], references: [id])
   aulas        Aula[]
 
   @@index([academiaId])
+  @@index([academiaId, unidadeId])
   @@index([academiaId, modalidadeId])
 }
 

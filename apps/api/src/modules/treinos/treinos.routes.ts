@@ -2,11 +2,14 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { TreinosService } from './treinos.service.js'
 import { PAPEIS_GESTAO } from '../../shared/utils/permissions.js'
+import { unidadeIdParaCriar } from '../../shared/utils/unidade.js'
+import { garantirIdsDoTenant } from '../../shared/utils/tenant-guard.js'
 
 const nivelEnum = z.enum(['INICIANTE', 'INTERMEDIARIO', 'AVANCADO', 'TODOS'])
 const formatoEnum = z.enum(['AMRAP', 'EMOM', 'FOR_TIME', 'TABATA', 'STRENGTH', 'HIIT', 'LIVRE'])
 
-const bodySchema = z.object({
+const criarSchema = z.object({
+  unidadeId:    z.number().int().positive().optional(),
   nome:         z.string().min(2).max(120),
   modalidadeId: z.number().int().positive().optional(),
   nivel:        nivelEnum.optional(),
@@ -16,7 +19,15 @@ const bodySchema = z.object({
   ativo:        z.boolean().optional(),
 })
 
-const partialSchema = bodySchema.partial()
+const editarSchema = z.object({
+  nome:         z.string().min(2).max(120),
+  modalidadeId: z.number().int().positive().optional(),
+  nivel:        nivelEnum.optional(),
+  formato:      formatoEnum.optional(),
+  duracaoMin:   z.number().int().min(1).max(600).optional(),
+  descricao:    z.string().min(1).max(10000),
+  ativo:        z.boolean().optional(),
+}).partial()
 
 export async function treinosRoutes(app: FastifyInstance) {
   function makeService(req: import('fastify').FastifyRequest) {
@@ -46,8 +57,10 @@ export async function treinosRoutes(app: FastifyInstance) {
   app.post('/', {
     preHandler: [app.authorize(...PAPEIS_GESTAO, 'PROFESSOR'), app.requireTenant],
     handler: async (request, reply) => {
-      const data = bodySchema.parse(request.body)
-      return reply.status(201).send(await makeService(request).criar(data))
+      const data = criarSchema.parse(request.body)
+      const unidadeId = unidadeIdParaCriar(request.tenant, data.unidadeId)
+      await garantirIdsDoTenant({ model: 'unidade', ids: [unidadeId], academiaId: request.tenant.academiaId })
+      return reply.status(201).send(await makeService(request).criar({ ...data, unidadeId }))
     },
   })
 
@@ -55,7 +68,7 @@ export async function treinosRoutes(app: FastifyInstance) {
     preHandler: [app.authorize(...PAPEIS_GESTAO, 'PROFESSOR'), app.requireTenant],
     handler: async (request) => {
       const id = Number((request.params as { id: string }).id)
-      const data = partialSchema.parse(request.body)
+      const data = editarSchema.parse(request.body)
       return makeService(request).atualizar(id, data)
     },
   })
