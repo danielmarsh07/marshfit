@@ -23,7 +23,7 @@ services:
     region: oregon
     plan: starter        # always-on (~US$ 7/mês, sem cold start)
     rootDir: .
-    buildCommand: npm install -g pnpm@10 && pnpm install --no-frozen-lockfile && pnpm --filter api db:generate && pnpm --filter api build
+    buildCommand: npx --yes pnpm@10 install --no-frozen-lockfile && npx --yes pnpm@10 --filter api db:generate && npx --yes pnpm@10 --filter api build
     # Em deploys normais, usamos `db push` aditivo (sem perder dados).
     # Para forçar um reset destrutivo do banco (drop tudo + seed novo),
     # defina a env var FORCE_DB_RESET=true no painel do Render, faça
@@ -32,11 +32,13 @@ services:
     preDeployCommand: |-
       if [ "$FORCE_DB_RESET" = "true" ]; then
         echo "⚠️  FORCE_DB_RESET=true → resetando banco e re-seedando";
-        pnpm --filter api exec prisma db push --accept-data-loss --force-reset --skip-generate && pnpm --filter api db:seed;
+        npx --yes pnpm@10 --filter api exec prisma db push --accept-data-loss --force-reset --skip-generate && npx --yes pnpm@10 --filter api db:seed;
       else
-        pnpm --filter api db:push:prod;
+        npx --yes pnpm@10 --filter api db:push:prod;
       fi
-    startCommand: pnpm --filter api start
+    # node direto evita dependencia do pnpm em runtime — dist/ ja foi gerado
+    # no build com todas as dependencias resolvidas.
+    startCommand: node apps/api/dist/main.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
@@ -76,7 +78,7 @@ services:
     name: marshfit-web
     runtime: static
     rootDir: .
-    buildCommand: npm install -g pnpm@10 && pnpm install --no-frozen-lockfile && pnpm --filter web build
+    buildCommand: npx --yes pnpm@10 install --no-frozen-lockfile && npx --yes pnpm@10 --filter web build
     staticPublishPath: ./apps/web/dist
     envVars:
       - key: VITE_API_URL
@@ -91,7 +93,7 @@ services:
     name: marshfit-landing
     runtime: static
     rootDir: .
-    buildCommand: npm install -g pnpm@10 && pnpm install --no-frozen-lockfile && pnpm --filter landing build
+    buildCommand: npx --yes pnpm@10 install --no-frozen-lockfile && npx --yes pnpm@10 --filter landing build
     staticPublishPath: ./apps/landing/dist
     envVars:
       - key: VITE_API_URL
