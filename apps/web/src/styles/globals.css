@@ -229,14 +229,9 @@ body {
 .themed-app-bg { background-color: #f8fafc; }
 [data-theme='box'] .themed-app-bg { background-color: #0a0a0a; }
 [data-theme='barsotti'] .themed-app-bg {
-  /* Overlay branco translucido + imagem fixed cover.
-   * Opacidade do overlay calibra "presenca" da foto:
-   *   ~0.95 = quase invisivel (watermark hard)
-   *   ~0.85 = sutil
-   *   ~0.70 = bem visivel (atual)
-   *   ~0.55 = dominante */
+  /* Sem overlay: imagem mostra suas cores originais (azul/branco do
+   * arquivo /auth-bg.jpg). Fallback solido se a imagem nao for servida. */
   background:
-    linear-gradient(rgba(248, 250, 252, 0.70), rgba(248, 250, 252, 0.70)),
     url('/auth-bg.jpg') center / cover no-repeat fixed,
     #f1f6fc;
 }
