@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Dumbbell, Loader2 } from 'lucide-react'
 import { api } from '@/services/api'
 import { useAuthStore, type VinculoAtivo, type UsuarioAuth } from '@/stores/auth.store'
+import { useBrand } from '@/lib/brand'
 import { APP_VERSION } from '@/changelog'
 
 const schema = z.object({
@@ -26,6 +27,7 @@ interface LoginResp {
 export function LoginPage() {
   const navigate = useNavigate()
   const setAuth = useAuthStore(s => s.setAuth)
+  const brand = useBrand()
   const [erro, setErro] = useState<string | null>(null)
   const [vinculos, setVinculos] = useState<VinculoAtivo[] | null>(null)
   const [dadosLogin, setDadosLogin] = useState<FormData | null>(null)
@@ -73,11 +75,20 @@ export function LoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-slate-50">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-6">
-          <div className="h-14 w-14 rounded-2xl bg-slate-900 flex items-center justify-center mb-3">
-            <Dumbbell className="h-7 w-7 text-brand-500" />
+          <div className="h-16 w-16 rounded-2xl themed-sidebar flex items-center justify-center mb-3 shadow-lg">
+            <div className="h-10 w-10 rounded-xl themed-logo flex items-center justify-center">
+              <Dumbbell className="h-6 w-6" />
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">MarshFit</h1>
-          <p className="text-sm text-slate-500 mt-1">Gestão para academias e boxes</p>
+          {brand.nomeComplemento ? (
+            <h1 className="themed-brand-title text-2xl leading-tight text-center">
+              <span style={{ color: 'var(--accent)' }}>{brand.nomeDestaque}</span>{' '}
+              <span className="text-slate-900">{brand.nomeComplemento}</span>
+            </h1>
+          ) : (
+            <h1 className="text-2xl font-bold text-slate-900">{brand.nome}</h1>
+          )}
+          <p className="text-sm text-slate-500 mt-1">{brand.slogan}</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
@@ -119,7 +130,7 @@ export function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 text-white py-3 font-medium hover:bg-slate-800 disabled:opacity-60"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-lg themed-cta py-3 font-medium disabled:opacity-60"
               >
                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                 Entrar
@@ -164,7 +175,7 @@ export function LoginPage() {
           )}
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-4">MarshFit {APP_VERSION} · Marsh Consultoria</p>
+        <p className="text-center text-xs text-slate-400 mt-4">{brand.nome} {APP_VERSION} · {brand.rodape}</p>
       </div>
     </div>
   )

@@ -3,31 +3,95 @@
 @tailwind utilities;
 
 :root {
-  --bg:        #ffffff;
-  --bg-muted:  #f8fafc;
-  --fg:        #0f172a;
-  --fg-muted:  #475569;
-  --border:    #e2e8f0;
-  --primary:   #0f172a;
-  --primary-fg: #ffffff;
-  --accent:    #22c55e;
-  --accent-fg: #052e16;
-  --danger:    #ef4444;
-  --warning:   #f97316;
+  --bg:          #ffffff;
+  --bg-muted:    #f8fafc;
+  --fg:          #0f172a;
+  --fg-muted:    #475569;
+  --border:      #e2e8f0;
+  --primary:     #0f172a;
+  --primary-fg:  #ffffff;
+  --accent:      #22c55e;
+  --accent-fg:   #052e16;
+  --danger:      #ef4444;
+  --warning:     #f97316;
+
+  /* Variáveis usadas pelos componentes "themed" — sidebar, logo, etc. */
+  --sidebar-bg:        #0f172a;
+  --sidebar-bg-from:   #0f172a;
+  --sidebar-bg-to:     #0f172a;
+  --sidebar-fg:        #f8fafc;
+  --sidebar-fg-muted:  #94a3b8;
+  --sidebar-border:    #1e293b;
+  --sidebar-active-bg: #1e293b;
+
+  --logo-bg:     #22c55e;
+  --logo-fg:     #052e16;
+
+  --cta-bg:        #0f172a;
+  --cta-bg-hover:  #1e293b;
+  --cta-fg:        #ffffff;
 }
 
 [data-theme='box'] {
-  --bg:        #0a0a0a;
-  --bg-muted:  #171717;
-  --fg:        #f5f5f5;
-  --fg-muted:  #a3a3a3;
-  --border:    #262626;
-  --primary:   #22c55e;
-  --primary-fg: #0a0a0a;
-  --accent:    #bef264;
-  --accent-fg: #1a2e05;
-  --danger:    #ef4444;
-  --warning:   #f97316;
+  --bg:          #0a0a0a;
+  --bg-muted:    #171717;
+  --fg:          #f5f5f5;
+  --fg-muted:    #a3a3a3;
+  --border:      #262626;
+  --primary:     #22c55e;
+  --primary-fg:  #0a0a0a;
+  --accent:      #bef264;
+  --accent-fg:   #1a2e05;
+  --danger:      #ef4444;
+  --warning:     #f97316;
+
+  --sidebar-bg:        #050505;
+  --sidebar-bg-from:   #050505;
+  --sidebar-bg-to:     #050505;
+  --sidebar-fg:        #f5f5f5;
+  --sidebar-fg-muted:  #a3a3a3;
+  --sidebar-border:    #262626;
+  --sidebar-active-bg: #1a1a1a;
+
+  --logo-bg:     #bef264;
+  --logo-fg:     #1a2e05;
+
+  --cta-bg:        #22c55e;
+  --cta-bg-hover:  #16a34a;
+  --cta-fg:        #052e16;
+}
+
+/* ─────────────────────────────────────────────
+   BARSOTTI BROTHERS — Weightlifting & Conditioning
+   Azul cobalto vibrante + laranja queimado.
+   ───────────────────────────────────────────── */
+[data-theme='barsotti'] {
+  --bg:          #ffffff;
+  --bg-muted:    #f1f6fc;
+  --fg:          #0c2540;
+  --fg-muted:    #475569;
+  --border:      #cfdcef;
+  --primary:     #0E4FA0;
+  --primary-fg:  #ffffff;
+  --accent:      #ED6630;
+  --accent-fg:   #ffffff;
+  --danger:      #d73826;
+  --warning:     #ED6630;
+
+  --sidebar-bg-from:   #0E4FA0;
+  --sidebar-bg-to:     #1565C7;
+  --sidebar-bg:        #0E4FA0;
+  --sidebar-fg:        #ffffff;
+  --sidebar-fg-muted:  #B7CDEC;
+  --sidebar-border:    #1565C7;
+  --sidebar-active-bg: #0a3d80;
+
+  --logo-bg:     #ED6630;
+  --logo-fg:     #ffffff;
+
+  --cta-bg:        #ED6630;
+  --cta-bg-hover:  #D55224;
+  --cta-fg:        #ffffff;
 }
 
 html, body, #root {
@@ -39,4 +103,60 @@ body {
   color: var(--fg);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* ─────────────────────────────────────────────
+   Classes "themed" — usadas pelos componentes para
+   responder automaticamente ao tema ativo.
+   ───────────────────────────────────────────── */
+
+.themed-sidebar {
+  background: linear-gradient(180deg, var(--sidebar-bg-from) 0%, var(--sidebar-bg-to) 100%);
+  color: var(--sidebar-fg);
+}
+.themed-sidebar-border {
+  border-color: var(--sidebar-border);
+}
+.themed-sidebar-fg-muted {
+  color: var(--sidebar-fg-muted);
+}
+.themed-sidebar-link {
+  color: var(--sidebar-fg);
+  opacity: 0.85;
+}
+.themed-sidebar-link:hover {
+  background: var(--sidebar-active-bg);
+  opacity: 1;
+}
+.themed-sidebar-link.active {
+  background: var(--sidebar-active-bg);
+  opacity: 1;
+}
+
+.themed-logo {
+  background: var(--logo-bg);
+  color: var(--logo-fg);
+}
+
+.themed-cta {
+  background: var(--cta-bg);
+  color: var(--cta-fg);
+}
+.themed-cta:hover {
+  background: var(--cta-bg-hover);
+}
+
+.themed-accent-text {
+  color: var(--accent);
+}
+
+/* Apenas no tema Barsotti, dá um visual "industrial" no header e nos botões */
+[data-theme='barsotti'] .themed-brand-title {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+[data-theme='barsotti'] .themed-brand-accent {
+  color: var(--accent);
 }

@@ -1,7 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type Tema = 'default' | 'box'
+export type Tema = 'default' | 'box' | 'barsotti'
+
+export const TEMAS: { id: Tema; label: string; descricao: string }[] = [
+  { id: 'default',  label: 'Padrão',           descricao: 'Visual neutro do MarshFit.' },
+  { id: 'box',      label: 'Box (escuro)',     descricao: 'Tema dark inspirado em box de CrossFit.' },
+  { id: 'barsotti', label: 'Barsotti Brothers', descricao: 'Identidade visual da Barsotti Brothers — azul + laranja.' },
+]
 
 interface ThemeState {
   tema: Tema

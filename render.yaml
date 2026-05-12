@@ -24,7 +24,12 @@ services:
     plan: starter        # always-on (~US$ 7/mês, sem cold start)
     rootDir: .
     buildCommand: corepack enable && pnpm install --no-frozen-lockfile && pnpm --filter api db:generate && pnpm --filter api build
-    preDeployCommand: pnpm --filter api db:migrate:prod
+    # Usamos `db push` em vez de `migrate deploy` enquanto não há migrations
+    # versionadas no projeto. --accept-data-loss permite mudanças aditivas e
+    # ajustes de tipo; --skip-generate evita rodar generate duas vezes.
+    # Para reset completo (destrutivo), rodar manualmente no Shell:
+    #   pnpm --filter api exec prisma db push --accept-data-loss --force-reset
+    preDeployCommand: pnpm --filter api db:push:prod
     startCommand: pnpm --filter api start
     healthCheckPath: /health
     envVars:

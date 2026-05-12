@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth.store'
-import { useThemeStore } from '@/stores/theme.store'
+import { useThemeStore, TEMAS, type Tema } from '@/stores/theme.store'
+import { useBrand } from '@/lib/brand'
 import { api } from '@/services/api'
 import {
   LayoutDashboard,
@@ -12,8 +13,6 @@ import {
   CreditCard,
   Settings,
   LogOut,
-  Sun,
-  Moon,
   Tag,
   DoorOpen,
   GraduationCap,
@@ -23,6 +22,8 @@ import {
   CalendarDays,
   UserCog,
   MoreHorizontal,
+  Palette,
+  Check,
 } from 'lucide-react'
 import { APP_VERSION } from '@/changelog'
 import { cn } from '@/lib/cn'
@@ -60,9 +61,11 @@ const MENU: ItemMenu[] = [
 export function AppLayout() {
   const { usuario, vinculo, clearAuth } = useAuthStore()
   const { tema, setTema } = useThemeStore()
+  const brand = useBrand()
   const navigate = useNavigate()
   const location = useLocation()
   const [drawerAberto, setDrawerAberto] = useState(false)
+  const [temaPickerAberto, setTemaPickerAberto] = useState(false)
 
   const itensVisiveis = MENU.filter(item => item.papeis.includes(vinculo?.papel ?? ''))
   // Bottom nav mostra os 4 primeiros itens por papel. O resto vai pro drawer "Mais".
@@ -71,7 +74,7 @@ export function AppLayout() {
   const temMais = itensSecundarios.length > 0
 
   // Fecha o drawer ao trocar de rota.
-  useEffect(() => { setDrawerAberto(false) }, [location.pathname])
+  useEffect(() => { setDrawerAberto(false); setTemaPickerAberto(false) }, [location.pathname])
 
   async function logout() {
     try { await api.post('/auth/logout') } catch { /* ignora */ }
@@ -82,19 +85,19 @@ export function AppLayout() {
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar desktop */}
-      <aside className="hidden md:flex md:w-64 flex-col bg-slate-900 text-slate-100">
-        <div className="px-4 py-5 border-b border-slate-800">
+      <aside className="hidden md:flex md:w-64 flex-col themed-sidebar">
+        <div className="px-4 py-5 border-b themed-sidebar-border">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-brand-500 flex items-center justify-center">
-              <Dumbbell className="h-4 w-4 text-slate-900" />
+            <div className="h-9 w-9 rounded-lg themed-logo flex items-center justify-center flex-shrink-0">
+              <Dumbbell className="h-5 w-5" />
             </div>
-            <div>
-              <div className="font-semibold">MarshFit</div>
-              <div className="text-[10px] text-slate-400">{APP_VERSION}</div>
+            <div className="min-w-0">
+              <BrandTitle brand={brand} />
+              <div className="text-[10px] themed-sidebar-fg-muted opacity-75">{APP_VERSION}</div>
             </div>
           </div>
           {vinculo && (
-            <div className="mt-3 text-xs text-slate-400">
+            <div className="mt-3 text-xs themed-sidebar-fg-muted">
               <div className="truncate">{vinculo.academiaNome}</div>
               <div className="text-[10px] mt-0.5 opacity-75">
                 {vinculo.papel.replace(/_/g, ' ').toLowerCase()}
@@ -109,10 +112,8 @@ export function AppLayout() {
               key={to}
               to={to}
               className={({ isActive }) => cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition',
-                isActive
-                  ? 'bg-slate-800 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white',
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition themed-sidebar-link',
+                isActive && 'active',
               )}
             >
               <Icon className="h-4 w-4" />
@@ -121,23 +122,23 @@ export function AppLayout() {
           ))}
         </nav>
 
-        <div className="px-2 py-3 border-t border-slate-800">
+        <div className="px-2 py-3 border-t themed-sidebar-border">
           <button
-            onClick={() => setTema(tema === 'default' ? 'box' : 'default')}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800"
+            onClick={() => setTemaPickerAberto(true)}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm themed-sidebar-link"
           >
-            {tema === 'default' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-            Tema {tema === 'default' ? 'box' : 'padrão'}
+            <Palette className="h-4 w-4" />
+            Tema: {TEMAS.find(t => t.id === tema)?.label}
           </button>
           <button
             onClick={logout}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm themed-sidebar-link"
           >
             <LogOut className="h-4 w-4" />
             Sair
           </button>
           {usuario && (
-            <div className="mt-2 px-3 text-[11px] text-slate-500 truncate">
+            <div className="mt-2 px-3 text-[11px] themed-sidebar-fg-muted opacity-70 truncate">
               {usuario.nome}
             </div>
           )}
@@ -147,14 +148,14 @@ export function AppLayout() {
       {/* Conteúdo principal */}
       <main className="flex-1 overflow-x-hidden">
         {/* Topbar mobile */}
-        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-slate-900 text-white">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-brand-500 flex items-center justify-center">
-              <Dumbbell className="h-4 w-4 text-slate-900" />
+        <div className="md:hidden flex items-center justify-between px-4 py-3 themed-sidebar">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="h-8 w-8 rounded-lg themed-logo flex items-center justify-center flex-shrink-0">
+              <Dumbbell className="h-4 w-4" />
             </div>
-            <span className="font-semibold">MarshFit</span>
+            <BrandTitle brand={brand} compacto />
           </div>
-          <button onClick={logout} className="p-2 -mr-2">
+          <button onClick={logout} className="p-2 -mr-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-white" aria-label="Sair">
             <LogOut className="h-5 w-5" />
           </button>
         </div>
@@ -233,11 +234,11 @@ export function AppLayout() {
             </nav>
             <div className="border-t border-slate-200 mt-2 pt-2">
               <button
-                onClick={() => { setTema(tema === 'default' ? 'box' : 'default'); setDrawerAberto(false) }}
+                onClick={() => { setDrawerAberto(false); setTemaPickerAberto(true) }}
                 className="w-full flex items-center gap-3 px-5 py-3.5 text-base text-slate-700 active:bg-slate-100"
               >
-                {tema === 'default' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-                Tema {tema === 'default' ? 'escuro' : 'padrão'}
+                <Palette className="h-5 w-5" />
+                Tema: <span className="font-medium">{TEMAS.find(t => t.id === tema)?.label}</span>
               </button>
               <button
                 onClick={logout}
@@ -253,6 +254,78 @@ export function AppLayout() {
           </div>
         </div>
       )}
+
+      {/* Theme picker — modal global */}
+      {temaPickerAberto && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setTemaPickerAberto(false) }}
+        >
+          <div className="bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl w-full max-w-md max-h-[80dvh] overflow-y-auto"
+            style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 1rem)' }}
+          >
+            <div className="px-5 py-4 border-b border-slate-200">
+              <h3 className="font-semibold text-base text-slate-900">Escolha o tema</h3>
+              <p className="text-sm text-slate-500 mt-0.5">A mudança aplica imediatamente em todo o sistema.</p>
+            </div>
+            <div className="p-3 space-y-2">
+              {TEMAS.map(({ id, label, descricao }) => (
+                <button
+                  key={id}
+                  onClick={() => { setTema(id as Tema); setTemaPickerAberto(false) }}
+                  className={cn(
+                    'w-full text-left flex items-start gap-3 p-4 rounded-xl border-2 active:bg-slate-50 transition',
+                    tema === id ? 'border-slate-900 bg-slate-50' : 'border-slate-200 hover:border-slate-400',
+                  )}
+                >
+                  <PreviewSwatch tema={id as Tema} />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-slate-900 flex items-center gap-2">
+                      {label}
+                      {tema === id && <Check className="h-4 w-4 text-slate-900" />}
+                    </div>
+                    <div className="text-sm text-slate-500 mt-0.5">{descricao}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Título com destaque colorido na primeira palavra (suportando temas com nome composto). */
+function BrandTitle({ brand, compacto = false }: { brand: ReturnType<typeof useBrand>; compacto?: boolean }) {
+  if (brand.nomeComplemento) {
+    return (
+      <div className={cn('themed-brand-title leading-tight', compacto ? 'text-base' : 'text-lg')}>
+        <span className="themed-brand-accent">{brand.nomeDestaque}</span>
+        <span className="text-white"> {brand.nomeComplemento}</span>
+      </div>
+    )
+  }
+  return (
+    <div className={cn('font-semibold leading-tight', compacto ? 'text-base' : 'text-base')}>
+      {brand.nome}
+    </div>
+  )
+}
+
+/** Quadradinho de preview para o theme picker. */
+function PreviewSwatch({ tema }: { tema: Tema }) {
+  const styles: Record<Tema, { bg: string; accent: string; fg: string }> = {
+    default:  { bg: '#0f172a', accent: '#22c55e', fg: '#f8fafc' },
+    box:      { bg: '#0a0a0a', accent: '#bef264', fg: '#f5f5f5' },
+    barsotti: { bg: '#0E4FA0', accent: '#ED6630', fg: '#ffffff' },
+  }
+  const s = styles[tema]
+  return (
+    <div className="h-12 w-12 rounded-lg flex-shrink-0 overflow-hidden border border-slate-200" style={{ background: s.bg }}>
+      <div className="h-full flex items-center justify-center">
+        <div className="h-5 w-5 rounded" style={{ background: s.accent }} />
+      </div>
     </div>
   )
 }
