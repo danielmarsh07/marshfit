@@ -11,7 +11,6 @@ import {
   Calendar,
   Dumbbell,
   CreditCard,
-  Settings,
   LogOut,
   Tag,
   DoorOpen,
@@ -55,8 +54,14 @@ const MENU: ItemMenu[] = [
   { to: '/modalidades',   label: 'Modalidades',  icon: Tag,             papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA', 'GESTOR_UNIDADE'] },
   { to: '/financeiro',    label: 'Financeiro',   icon: CreditCard,      papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA', 'FINANCEIRO'] },
   { to: '/usuarios',      label: 'Usuários',     icon: UserCog,         papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA'] },
-  { to: '/configuracoes', label: 'Configurações', icon: Settings,       papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA'] },
+  // Configurações desabilitado por enquanto — sem conteúdo definido. Quando
+  // tiver use-case (tema, fuso, notificações), descomentar.
+  // { to: '/configuracoes', label: 'Configurações', icon: Settings,       papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA'] },
 ]
+
+// Papéis que veem a versão do app (debug/atendimento). Outros papéis (gestor,
+// professor, recepção, aluno) não precisam saber a versão em uso.
+const PAPEIS_VEEM_VERSAO: ReadonlyArray<string> = ['SUPER_ADMIN', 'ADMIN_ACADEMIA']
 
 export function AppLayout() {
   const { usuario, vinculo, clearAuth } = useAuthStore()
@@ -68,6 +73,7 @@ export function AppLayout() {
   const [temaPickerAberto, setTemaPickerAberto] = useState(false)
 
   const itensVisiveis = MENU.filter(item => item.papeis.includes(vinculo?.papel ?? ''))
+  const veVersao = PAPEIS_VEEM_VERSAO.includes(vinculo?.papel ?? '')
   // Bottom nav mostra os 4 primeiros itens por papel. O resto vai pro drawer "Mais".
   const itensPrimarios = itensVisiveis.slice(0, 4)
   const itensSecundarios = itensVisiveis.slice(4)
@@ -93,7 +99,9 @@ export function AppLayout() {
             </div>
             <div className="min-w-0">
               <BrandTitle brand={brand} />
-              <div className="text-[10px] themed-sidebar-fg-muted opacity-75">{APP_VERSION}</div>
+              {veVersao && (
+                <div className="text-[10px] themed-sidebar-fg-muted opacity-75">{APP_VERSION}</div>
+              )}
             </div>
           </div>
           {vinculo && (
