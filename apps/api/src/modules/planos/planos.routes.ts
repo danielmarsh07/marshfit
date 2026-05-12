@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { PlanosService } from './planos.service.js'
-import { PAPEIS_ADMIN } from '../../shared/utils/permissions.js'
+import { PAPEIS_GESTAO } from '../../shared/utils/permissions.js'
 import { unidadeIdParaCriar } from '../../shared/utils/unidade.js'
 import { garantirIdsDoTenant } from '../../shared/utils/tenant-guard.js'
 
@@ -55,7 +55,7 @@ export async function planosRoutes(app: FastifyInstance) {
   })
 
   app.post('/', {
-    preHandler: [app.authorize(...PAPEIS_ADMIN), app.requireTenant],
+    preHandler: [app.authorize(...PAPEIS_GESTAO), app.requireTenant],
     handler: async (request, reply) => {
       const data = criarSchema.parse(request.body)
       const unidadeId = unidadeIdParaCriar(request.tenant, data.unidadeId)
@@ -65,7 +65,7 @@ export async function planosRoutes(app: FastifyInstance) {
   })
 
   app.put('/:id', {
-    preHandler: [app.authorize(...PAPEIS_ADMIN), app.requireTenant],
+    preHandler: [app.authorize(...PAPEIS_GESTAO), app.requireTenant],
     handler: async (request) => {
       const id = Number((request.params as { id: string }).id)
       const data = editarSchema.parse(request.body)
@@ -74,7 +74,7 @@ export async function planosRoutes(app: FastifyInstance) {
   })
 
   app.delete('/:id', {
-    preHandler: [app.authorize(...PAPEIS_ADMIN), app.requireTenant],
+    preHandler: [app.authorize(...PAPEIS_GESTAO), app.requireTenant],
     handler: async (request) => {
       const id = Number((request.params as { id: string }).id)
       return makeService(request).excluir(id)

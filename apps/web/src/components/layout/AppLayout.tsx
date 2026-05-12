@@ -49,7 +49,7 @@ const MENU: ItemMenu[] = [
   { to: '/aulas',         label: 'Aulas',        icon: Calendar,        papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA', 'GESTOR_UNIDADE', 'PROFESSOR', 'RECEPCAO'] },
   { to: '/treinos',       label: 'Treinos',      icon: Dumbbell,        papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA', 'GESTOR_UNIDADE', 'PROFESSOR'] },
   { to: '/professores',   label: 'Professores',  icon: GraduationCap,   papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA', 'GESTOR_UNIDADE'] },
-  { to: '/planos',        label: 'Planos',       icon: Receipt,         papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA'] },
+  { to: '/planos',        label: 'Planos',       icon: Receipt,         papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA', 'GESTOR_UNIDADE'] },
   { to: '/unidades',      label: 'Unidades',     icon: Building2,       papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA'] },
   { to: '/salas',         label: 'Salas',        icon: DoorOpen,        papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA', 'GESTOR_UNIDADE'] },
   { to: '/modalidades',   label: 'Modalidades',  icon: Tag,             papeis: ['SUPER_ADMIN', 'ADMIN_ACADEMIA', 'GESTOR_UNIDADE'] },
