@@ -19,11 +19,28 @@ api.interceptors.request.use((config) => {
 // Renovação automática de access token quando expira.
 let refreshing: Promise<string | null> | null = null
 
+/**
+ * Endpoints de auth onde um 401 significa "credencial invalida", nao
+ * "token expirou". Aqui o erro deve propagar normalmente para o componente
+ * que chamou (LoginPage, etc.) exibir a mensagem ao usuario, sem tentar
+ * refresh nem redirect.
+ */
+function isAuthEndpoint(url: string | undefined): boolean {
+  if (!url) return false
+  return (
+    url.includes('/auth/login') ||
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/selecionar-academia') ||
+    url.includes('/academias/registrar')
+  )
+}
+
 api.interceptors.response.use(
   (r) => r,
   async (error) => {
     const original = error.config
-    if (error.response?.status === 401 && !original._retry) {
+    const url: string | undefined = original?.url
+    if (error.response?.status === 401 && !original._retry && !isAuthEndpoint(url)) {
       original._retry = true
       try {
         if (!refreshing) {
