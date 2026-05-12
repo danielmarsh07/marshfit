@@ -17,6 +17,28 @@ function diaSemanaUtc(d: Date): number {
   return d.getUTCDay()  // 0..6 (dom=0)
 }
 
+/**
+ * Fuso horario da operacao (Brasil/Sao Paulo = UTC-3, sem horario de verao
+ * desde 2019). horarioInicio das aulas é interpretado nesse fuso.
+ */
+const TZ_OFFSET_HOURS = -3
+
+/**
+ * Combina dataAula (UTC 00:00) com horarioInicio "HH:MM" (hora local da
+ * academia) e devolve o momento real em UTC.
+ */
+function momentoDaAula(dataAula: Date, horarioInicio: string): Date {
+  const [h, m] = horarioInicio.split(':').map(Number)
+  const momento = new Date(dataAula)
+  // setUTCHours(h - TZ_OFFSET_HOURS): para UTC-3 vira (h + 3), convertendo
+  // a hora local da academia em UTC.
+  momento.setUTCHours(h - TZ_OFFSET_HOURS, m, 0, 0)
+  return momento
+}
+
+/** Quantos milissegundos antes do inicio da aula a reserva fecha. */
+const ANTECEDENCIA_MINIMA_MS = 2 * 60 * 1000  // 2 minutos
+
 export class ReservasService {
   constructor(private db: PrismaTenantClient, private academiaId: number) {}
 
@@ -63,8 +85,17 @@ export class ReservasService {
     if (diaSemanaUtc(dataAula) !== aula.diaSemana) {
       throw criarErro(400, 'Essa aula não acontece nesse dia da semana')
     }
-    if (dataAula < diaUtc(new Date().toISOString().slice(0, 10))) {
-      throw criarErro(400, 'Não é possível reservar data passada')
+
+    // Janela de reserva: encerra ANTECEDENCIA_MINIMA_MS antes do inicio da aula.
+    // Cobre tanto "dia passado" quanto "aula ja comecou ou comeca em menos de 2min".
+    const inicio = momentoDaAula(dataAula, aula.horarioInicio)
+    const limite = inicio.getTime() - ANTECEDENCIA_MINIMA_MS
+    if (Date.now() >= limite) {
+      const hoje = diaUtc(new Date().toISOString().slice(0, 10))
+      if (dataAula < hoje) {
+        throw criarErro(400, 'Não é possível reservar em dia passado')
+      }
+      throw criarErro(400, 'Reservas fecham 2 minutos antes do início da aula')
     }
 
     const matricula = aluno.matriculas[0]
