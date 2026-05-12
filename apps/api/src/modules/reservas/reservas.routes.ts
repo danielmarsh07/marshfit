@@ -8,7 +8,9 @@ import { prisma } from '../../infra/database/prisma.js'
 
 const reservarSchema = z.object({
   aulaId:   z.number().int().positive(),
-  alunoId:  z.number().int().positive(),
+  // alunoId e opcional: quando o usuario logado e ALUNO, resolvemos via JWT.
+  // Quando admin/recepcao reserva para alguem, o alunoId e obrigatorio.
+  alunoId:  z.number().int().positive().optional(),
   dataAula: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD'),
 })
 
@@ -19,14 +21,21 @@ const cancelarSchema = z.object({
 /**
  * Resolve o alunoId quando quem chama é um ALUNO (não pode reservar para outro).
  * Para admin/recepção, exige alunoId explícito no payload.
+ *
+ * Para ALUNO: ignora alunoId do body (o aluno nem precisa saber seu ID),
+ * resolve sempre pelo JWT. Se um ID veio e nao bate, rejeita (defesa contra
+ * tentativa de reservar em nome de outro).
  */
-async function resolverAlunoIdParaCriacao(user: JwtPayload, alunoIdInformado: number): Promise<number> {
+async function resolverAlunoIdParaCriacao(user: JwtPayload, alunoIdInformado: number | undefined): Promise<number> {
   if (user.papel === 'ALUNO') {
     const aluno = await prisma.aluno.findFirst({ where: { usuarioId: user.sub } })
     if (!aluno) throw criarErro(403, 'Aluno não vinculado a este usuário')
-    if (alunoIdInformado !== aluno.id) throw criarErro(403, 'Não é possível reservar em nome de outro aluno')
+    if (alunoIdInformado !== undefined && alunoIdInformado !== aluno.id) {
+      throw criarErro(403, 'Não é possível reservar em nome de outro aluno')
+    }
     return aluno.id
   }
+  if (!alunoIdInformado) throw criarErro(400, 'Informe o alunoId')
   return alunoIdInformado
 }
 

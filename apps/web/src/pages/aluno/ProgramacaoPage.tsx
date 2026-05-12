@@ -40,14 +40,10 @@ export function ProgramacaoPage() {
   })
 
   const reservar = useMutation({
+    // Aluno nao envia alunoId — backend resolve pelo JWT (user.sub -> aluno.usuarioId).
     mutationFn: async (a: Aula) => api.post('/reservas', {
       aulaId: a.id,
-      alunoId: -1,            // backend ignora p/ aluno (resolve pelo JWT)
       dataAula: a.data,
-    }).catch((e) => {
-      // tenta novamente forçando o alunoId real — caso o aluno tenha múltiplos vínculos.
-      // Em prática o backend resolve direto. Repassamos o erro.
-      throw e
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['portal-programacao'] })
