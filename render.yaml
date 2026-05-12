@@ -24,12 +24,18 @@ services:
     plan: starter        # always-on (~US$ 7/mês, sem cold start)
     rootDir: .
     buildCommand: corepack enable && pnpm install --no-frozen-lockfile && pnpm --filter api db:generate && pnpm --filter api build
-    # Usamos `db push` em vez de `migrate deploy` enquanto não há migrations
-    # versionadas no projeto. --accept-data-loss permite mudanças aditivas e
-    # ajustes de tipo; --skip-generate evita rodar generate duas vezes.
-    # Para reset completo (destrutivo), rodar manualmente no Shell:
-    #   pnpm --filter api exec prisma db push --accept-data-loss --force-reset
-    preDeployCommand: pnpm --filter api db:push:prod
+    # Em deploys normais, usamos `db push` aditivo (sem perder dados).
+    # Para forçar um reset destrutivo do banco (drop tudo + seed novo),
+    # defina a env var FORCE_DB_RESET=true no painel do Render, faça
+    # Manual Deploy, e DEPOIS volte a env para false/remova. Útil em
+    # piloto/demo quando o schema muda de forma incompatível.
+    preDeployCommand: |-
+      if [ "$FORCE_DB_RESET" = "true" ]; then
+        echo "⚠️  FORCE_DB_RESET=true → resetando banco e re-seedando";
+        pnpm --filter api exec prisma db push --accept-data-loss --force-reset --skip-generate && pnpm --filter api db:seed;
+      else
+        pnpm --filter api db:push:prod;
+      fi
     startCommand: pnpm --filter api start
     healthCheckPath: /health
     envVars:
@@ -58,6 +64,11 @@ services:
       - key: PORTAL_URL
         sync: false
       - key: LANDING_URL
+        sync: false
+      # Coloque "true" no painel para um reset destrutivo no próximo
+      # deploy (apaga tudo + roda seed). Lembre de voltar para "false"
+      # ou remover depois — caso contrário todo deploy zera o banco.
+      - key: FORCE_DB_RESET
         sync: false
 
   # ── Web (sistema admin + portal aluno) ───────────────────────────────
