@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth.store'
 import { useThemeStore } from '@/stores/theme.store'
 import { api } from '@/services/api'
@@ -21,6 +22,7 @@ import {
   CalendarCheck,
   CalendarDays,
   UserCog,
+  MoreHorizontal,
 } from 'lucide-react'
 import { APP_VERSION } from '@/changelog'
 import { cn } from '@/lib/cn'
@@ -59,8 +61,17 @@ export function AppLayout() {
   const { usuario, vinculo, clearAuth } = useAuthStore()
   const { tema, setTema } = useThemeStore()
   const navigate = useNavigate()
+  const location = useLocation()
+  const [drawerAberto, setDrawerAberto] = useState(false)
 
   const itensVisiveis = MENU.filter(item => item.papeis.includes(vinculo?.papel ?? ''))
+  // Bottom nav mostra os 4 primeiros itens por papel. O resto vai pro drawer "Mais".
+  const itensPrimarios = itensVisiveis.slice(0, 4)
+  const itensSecundarios = itensVisiveis.slice(4)
+  const temMais = itensSecundarios.length > 0
+
+  // Fecha o drawer ao trocar de rota.
+  useEffect(() => { setDrawerAberto(false) }, [location.pathname])
 
   async function logout() {
     try { await api.post('/auth/logout') } catch { /* ignora */ }
@@ -152,24 +163,96 @@ export function AppLayout() {
           <Outlet />
         </div>
 
-        {/* Bottom nav mobile (placeholder simples — refinaremos por papel na Fase 5) */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around py-2 z-50">
-          {itensVisiveis.slice(0, 5).map(({ to, label, icon: Icon }) => (
+        {/* Bottom nav mobile: 4 itens fixos + 'Mais' quando houver overflow */}
+        <nav
+          className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around z-40"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)', paddingTop: '0.5rem' }}
+        >
+          {itensPrimarios.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) => cn(
-                'flex flex-col items-center gap-0.5 px-2 py-1.5 text-[10px]',
-                isActive ? 'text-slate-900' : 'text-slate-500',
+                'flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 text-[11px] flex-1 min-h-[52px] active:bg-slate-100',
+                isActive ? 'text-slate-900 font-medium' : 'text-slate-500',
               )}
             >
               <Icon className="h-5 w-5" />
-              {label}
+              <span className="truncate max-w-full">{label}</span>
             </NavLink>
           ))}
+          {temMais && (
+            <button
+              onClick={() => setDrawerAberto(true)}
+              className={cn(
+                'flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 text-[11px] flex-1 min-h-[52px] active:bg-slate-100',
+                drawerAberto ? 'text-slate-900 font-medium' : 'text-slate-500',
+              )}
+              aria-label="Mais opções"
+            >
+              <MoreHorizontal className="h-5 w-5" />
+              <span>Mais</span>
+            </button>
+          )}
         </nav>
-        <div className="md:hidden h-16" />
+        {/* Spacer pro conteúdo não ficar atrás do bottom nav */}
+        <div
+          className="md:hidden"
+          style={{ height: 'calc(64px + env(safe-area-inset-bottom))' }}
+        />
       </main>
+
+      {/* Drawer "Mais" — mobile only */}
+      {drawerAberto && (
+        <div
+          className="md:hidden fixed inset-0 z-50 bg-slate-900/60 flex items-end"
+          onClick={(e) => { if (e.target === e.currentTarget) setDrawerAberto(false) }}
+        >
+          <div
+            className="bg-white rounded-t-2xl w-full max-h-[80dvh] overflow-y-auto shadow-2xl"
+            style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 1rem)' }}
+          >
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="h-1 w-10 rounded-full bg-slate-300" />
+            </div>
+            <div className="px-4 pb-2 text-sm font-medium text-slate-700">Mais opções</div>
+            <nav className="pb-2">
+              {itensSecundarios.map(({ to, label, icon: Icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) => cn(
+                    'flex items-center gap-3 px-5 py-3.5 text-base active:bg-slate-100',
+                    isActive ? 'bg-slate-50 text-slate-900 font-medium' : 'text-slate-700',
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  {label}
+                </NavLink>
+              ))}
+            </nav>
+            <div className="border-t border-slate-200 mt-2 pt-2">
+              <button
+                onClick={() => { setTema(tema === 'default' ? 'box' : 'default'); setDrawerAberto(false) }}
+                className="w-full flex items-center gap-3 px-5 py-3.5 text-base text-slate-700 active:bg-slate-100"
+              >
+                {tema === 'default' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                Tema {tema === 'default' ? 'escuro' : 'padrão'}
+              </button>
+              <button
+                onClick={logout}
+                className="w-full flex items-center gap-3 px-5 py-3.5 text-base text-slate-700 active:bg-slate-100"
+              >
+                <LogOut className="h-5 w-5" />
+                Sair
+              </button>
+              {usuario && (
+                <div className="px-5 py-2 text-xs text-slate-500 truncate">{usuario.nome} — {usuario.email}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

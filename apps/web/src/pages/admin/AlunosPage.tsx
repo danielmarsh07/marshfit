@@ -105,6 +105,9 @@ export function AlunosPage() {
 
       <div className="flex flex-wrap gap-2 mb-4">
         <Input
+          type="search"
+          inputMode="search"
+          enterKeyHint="search"
           placeholder="Buscar por nome, CPF, email ou telefone"
           value={busca}
           onChange={e => setBusca(e.target.value)}
@@ -242,7 +245,7 @@ function NovoAlunoModal({
         </Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="CPF" erro={errors.cpf?.message}>
-            <Input {...register('cpf')} placeholder="000.000.000-00" />
+            <Input {...register('cpf')} inputMode="numeric" autoComplete="off" placeholder="000.000.000-00" />
           </Field>
           <Field label="Data nascimento" erro={errors.dataNasc?.message}>
             <Input {...register('dataNasc')} type="date" />
@@ -258,11 +261,11 @@ function NovoAlunoModal({
             </Select>
           </Field>
           <Field label="Telefone" erro={errors.telefone?.message} obrigatorio>
-            <Input {...register('telefone')} placeholder="(11) 99999-0000" />
+            <Input {...register('telefone')} type="tel" inputMode="tel" autoComplete="tel" placeholder="(11) 99999-0000" />
           </Field>
         </div>
         <Field label="Email" erro={errors.email?.message}>
-          <Input {...register('email')} type="email" />
+          <Input {...register('email')} type="email" inputMode="email" autoComplete="email" />
         </Field>
         <Field label="Endereço">
           <Input {...register('endereco')} />

@@ -97,7 +97,15 @@ export function TreinosPage() {
       />
 
       <div className="mb-4">
-        <Input placeholder="Buscar por nome ou descrição" value={busca} onChange={e => setBusca(e.target.value)} className="max-w-sm" />
+        <Input
+          type="search"
+          inputMode="search"
+          enterKeyHint="search"
+          placeholder="Buscar por nome ou descrição"
+          value={busca}
+          onChange={e => setBusca(e.target.value)}
+          className="max-w-sm"
+        />
       </div>
 
       {isLoading ? (
@@ -112,7 +120,7 @@ export function TreinosPage() {
             <button
               key={t.id}
               onClick={() => { setEditando(t); setModal(true) }}
-              className="text-left bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-900 transition"
+              className="text-left bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-900 active:bg-slate-50 transition"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">

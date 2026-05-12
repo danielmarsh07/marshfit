@@ -105,7 +105,7 @@ export function PlanosPage() {
             <button
               key={p.id}
               onClick={() => { setEditando(p); setModal(true) }}
-              className="text-left bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-900 transition"
+              className="text-left bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-900 active:bg-slate-50 transition"
             >
               <div className="flex items-start justify-between">
                 <div>

@@ -233,7 +233,7 @@ function ConvidarModal({
           <Input {...register('nome')} placeholder="João da Silva" />
         </Field>
         <Field label="Email" erro={errors.email?.message} obrigatorio>
-          <Input {...register('email')} type="email" placeholder="joao@boxpiloto.com.br" />
+          <Input {...register('email')} type="email" inputMode="email" autoComplete="off" placeholder="joao@boxpiloto.com.br" />
         </Field>
         <Field label="Senha inicial" hint="O usuário poderá trocar depois." erro={errors.senha?.message} obrigatorio>
           <Input {...register('senha')} type="text" placeholder="Mínimo 6 caracteres" />

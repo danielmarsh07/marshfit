@@ -110,7 +110,7 @@ export function ModalidadesPage() {
             <button
               key={m.id}
               onClick={() => abrirEditar(m)}
-              className="text-left bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-900 transition"
+              className="text-left bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-900 active:bg-slate-50 transition"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">

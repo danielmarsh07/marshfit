@@ -66,7 +66,7 @@ export function AulasHojePage() {
             <button
               key={a.id}
               onClick={() => setAulaAberta(a)}
-              className="w-full text-left bg-white rounded-xl border-l-4 border border-slate-200 p-4 hover:border-slate-900 transition active:bg-slate-50"
+              className="w-full text-left bg-white rounded-xl border-l-4 border border-slate-200 p-4 hover:border-slate-900 active:bg-slate-50 transition active:bg-slate-50"
               style={{ borderLeftColor: a.modalidade.cor ?? '#22C55E' }}
             >
               <div className="flex items-start justify-between gap-2 flex-wrap">

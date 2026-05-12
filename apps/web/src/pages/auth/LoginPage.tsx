@@ -89,8 +89,10 @@ export function LoginPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                 <input
                   type="email"
+                  inputMode="email"
                   autoComplete="email"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  enterKeyHint="next"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500"
                   {...register('email')}
                 />
                 {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>}
@@ -101,7 +103,8 @@ export function LoginPage() {
                 <input
                   type="password"
                   autoComplete="current-password"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  enterKeyHint="go"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500"
                   {...register('senha')}
                 />
                 {errors.senha && <p className="text-xs text-red-600 mt-1">{errors.senha.message}</p>}

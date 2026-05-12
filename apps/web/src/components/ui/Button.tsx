@@ -19,8 +19,9 @@ const variantes: Record<Variante, string> = {
 }
 
 const tamanhos: Record<Tamanho, string> = {
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2.5 text-sm',
+  // Mobile-first: tamanhos miram >=44px de altura. Em sm:* relaxa para desktop.
+  sm: 'px-3 py-2 text-sm sm:py-1.5',
+  md: 'px-4 py-3 text-base sm:py-2.5 sm:text-sm',
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(

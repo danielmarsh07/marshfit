@@ -63,13 +63,13 @@ export function MinhasReservasPage() {
       <div className="mb-4 flex gap-2">
         <button
           onClick={() => setFuturo(true)}
-          className={`text-sm px-3 py-1.5 rounded-full border ${futuro ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 text-slate-700'}`}
+          className={`text-sm px-4 py-2 rounded-full border ${futuro ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 text-slate-700 active:bg-slate-50'}`}
         >
           Próximas
         </button>
         <button
           onClick={() => setFuturo(false)}
-          className={`text-sm px-3 py-1.5 rounded-full border ${!futuro ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 text-slate-700'}`}
+          className={`text-sm px-4 py-2 rounded-full border ${!futuro ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 text-slate-700 active:bg-slate-50'}`}
         >
           Histórico
         </button>

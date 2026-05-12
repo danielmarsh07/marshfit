@@ -148,56 +148,55 @@ function AulaProgramacaoCard({
       className="bg-white rounded-xl border-l-4 border border-slate-200 p-4"
       style={{ borderLeftColor: cor }}
     >
-      <div className="flex items-start justify-between gap-3 flex-wrap">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <Clock className="h-4 w-4" />
-            <span className="font-semibold text-slate-900">{aula.horarioInicio} – {aula.horarioFim}</span>
+            <span className="font-semibold text-slate-900 text-base">{aula.horarioInicio} – {aula.horarioFim}</span>
           </div>
           <div className="text-base font-medium text-slate-900 mt-1">
             {aula.nome || aula.modalidade.nome}
           </div>
-          <div className="text-xs text-slate-600 mt-1 flex flex-wrap gap-x-3 gap-y-1">
-            <span className="flex items-center gap-1"><User className="h-3 w-3" /> {aula.professor.nome}</span>
-            <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {aula.sala.nome}</span>
+          <div className="text-sm text-slate-600 mt-1 flex flex-wrap gap-x-3 gap-y-1">
+            <span className="flex items-center gap-1"><User className="h-3.5 w-3.5" /> {aula.professor.nome}</span>
+            <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {aula.sala.nome}</span>
             {aula.treino && (
               <span className="flex items-center gap-1 text-slate-500">
-                <Dumbbell className="h-3 w-3" /> {aula.treino.nome}
+                <Dumbbell className="h-3.5 w-3.5" /> {aula.treino.nome}
               </span>
             )}
           </div>
         </div>
-
-        <div className="text-right flex-shrink-0">
-          <div className="text-xs text-slate-500 flex items-center gap-1 justify-end">
-            <Users className="h-3 w-3" /> {aula.vagasOcupadas}/{aula.capacidade}
-          </div>
-          <div className="mt-2">
-            {!aula.modalidadeLiberada ? (
-              <div className="text-xs text-amber-700 flex items-center gap-1 justify-end">
-                <Lock className="h-3 w-3" /> fora do plano
-              </div>
-            ) : reservada ? (
-              aula.reservaMinha!.status === 'LISTA_ESPERA' ? (
-                <Button variante="secondary" tamanho="sm" onClick={onCancelar}>
-                  <Hourglass className="h-3.5 w-3.5" /> #{aula.reservaMinha!.posicaoEspera} · cancelar
-                </Button>
-              ) : (
-                <Button variante="secondary" tamanho="sm" onClick={onCancelar}>
-                  <Check className="h-3.5 w-3.5" /> reservado · cancelar
-                </Button>
-              )
-            ) : lotada ? (
-              <Button tamanho="sm" onClick={onReservar}>
-                Lista de espera
-              </Button>
-            ) : (
-              <Button tamanho="sm" onClick={onReservar}>
-                Reservar
-              </Button>
-            )}
-          </div>
+        <div className="text-sm text-slate-500 flex items-center gap-1 flex-shrink-0">
+          <Users className="h-3.5 w-3.5" /> {aula.vagasOcupadas}/{aula.capacidade}
         </div>
+      </div>
+
+      {/* Ação ocupa largura total no card — fica acessível ao polegar em mobile */}
+      <div className="mt-3">
+        {!aula.modalidadeLiberada ? (
+          <div className="text-sm text-amber-700 flex items-center gap-1.5 py-2">
+            <Lock className="h-4 w-4" /> Fora do seu plano
+          </div>
+        ) : reservada ? (
+          aula.reservaMinha!.status === 'LISTA_ESPERA' ? (
+            <Button variante="secondary" className="w-full" onClick={onCancelar}>
+              <Hourglass className="h-4 w-4" /> Lista de espera #{aula.reservaMinha!.posicaoEspera} · cancelar
+            </Button>
+          ) : (
+            <Button variante="secondary" className="w-full" onClick={onCancelar}>
+              <Check className="h-4 w-4" /> Reservado · cancelar
+            </Button>
+          )
+        ) : lotada ? (
+          <Button className="w-full" onClick={onReservar}>
+            Entrar na lista de espera
+          </Button>
+        ) : (
+          <Button className="w-full" onClick={onReservar}>
+            Reservar vaga
+          </Button>
+        )}
       </div>
     </div>
   )

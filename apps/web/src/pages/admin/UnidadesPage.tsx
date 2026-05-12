@@ -76,6 +76,9 @@ export function UnidadesPage() {
 
       <div className="mb-4">
         <Input
+          type="search"
+          inputMode="search"
+          enterKeyHint="search"
           placeholder="Buscar por nome, cidade ou bairro"
           value={busca}
           onChange={e => setBusca(e.target.value)}
@@ -236,10 +239,10 @@ function UnidadeFormModal({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Telefone" erro={errors.telefone?.message} obrigatorio>
-            <Input {...register('telefone')} placeholder="(11) 99999-0000" />
+            <Input {...register('telefone')} type="tel" inputMode="tel" autoComplete="tel" placeholder="(11) 99999-0000" />
           </Field>
           <Field label="Email" erro={errors.email?.message}>
-            <Input {...register('email')} type="email" placeholder="opcional" />
+            <Input {...register('email')} type="email" inputMode="email" autoComplete="email" placeholder="opcional" />
           </Field>
         </div>
         {unidade && (

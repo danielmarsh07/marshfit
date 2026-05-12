@@ -110,6 +110,7 @@ export function CadastroPage() {
               <Campo label="Nome da academia/box" erro={errors.nomeAcademia?.message}>
                 <input
                   type="text"
+                  autoComplete="organization"
                   placeholder="Ex: Box Pilot CrossFit"
                   {...register('nomeAcademia')}
                   className={baseInput}
@@ -120,6 +121,8 @@ export function CadastroPage() {
                 <Campo label="CNPJ ou CPF" erro={errors.cnpjCpf?.message}>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
                     placeholder="00.000.000/0001-00"
                     {...register('cnpjCpf')}
                     className={baseInput}
@@ -128,6 +131,8 @@ export function CadastroPage() {
                 <Campo label="Telefone" erro={errors.telefoneAcademia?.message}>
                   <input
                     type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
                     placeholder="(11) 99999-0000"
                     {...register('telefoneAcademia')}
                     className={baseInput}
@@ -138,6 +143,8 @@ export function CadastroPage() {
               <Campo label="Email da academia" erro={errors.emailAcademia?.message}>
                 <input
                   type="email"
+                  inputMode="email"
+                  autoComplete="email"
                   placeholder="contato@suaacademia.com.br"
                   {...register('emailAcademia')}
                   className={baseInput}
@@ -149,6 +156,7 @@ export function CadastroPage() {
               <Campo label="Seu nome" erro={errors.nomeAdmin?.message}>
                 <input
                   type="text"
+                  autoComplete="name"
                   placeholder="Como vamos te chamar"
                   {...register('nomeAdmin')}
                   className={baseInput}
@@ -229,7 +237,7 @@ function Campo({ label, erro, children }: { label: string; erro?: string; childr
     <label className="block">
       <span className="block text-sm font-medium text-slate-700 mb-1">{label}</span>
       {children}
-      {erro && <span className="block text-xs text-red-600 mt-1">{erro}</span>}
+      {erro && <span className="block text-sm text-red-600 mt-1">{erro}</span>}
     </label>
   )
 }

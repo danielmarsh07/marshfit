@@ -17,8 +17,8 @@ export function Field({ label, erro, hint, obrigatorio, children }: FieldProps) 
         {obrigatorio && <span className="text-red-500 ml-0.5">*</span>}
       </span>
       {children}
-      {hint && !erro && <span className="block text-xs text-slate-500 mt-1">{hint}</span>}
-      {erro && <span className="block text-xs text-red-600 mt-1">{erro}</span>}
+      {hint && !erro && <span className="block text-sm text-slate-500 mt-1">{hint}</span>}
+      {erro && <span className="block text-sm text-red-600 mt-1">{erro}</span>}
     </label>
   )
 }

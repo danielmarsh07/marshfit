@@ -142,11 +142,11 @@ export function AulasPage() {
       )}
 
       {unidades.length > 1 && (
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-4 -mx-4 px-4 sm:mx-0 sm:px-0 flex gap-2 overflow-x-auto flex-nowrap sm:flex-wrap pb-1 scrollbar-thin">
           <button
             onClick={() => setUnidadeFiltro('')}
-            className={`text-sm px-3 py-1.5 rounded-full border ${
-              unidadeFiltro === '' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 text-slate-700 hover:border-slate-500'
+            className={`flex-shrink-0 text-sm px-4 py-2 rounded-full border whitespace-nowrap ${
+              unidadeFiltro === '' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 text-slate-700 hover:border-slate-500 active:bg-slate-50'
             }`}
           >
             Todas as unidades
@@ -155,8 +155,8 @@ export function AulasPage() {
             <button
               key={u.id}
               onClick={() => setUnidadeFiltro(u.id)}
-              className={`text-sm px-3 py-1.5 rounded-full border ${
-                unidadeFiltro === u.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 text-slate-700 hover:border-slate-500'
+              className={`flex-shrink-0 text-sm px-4 py-2 rounded-full border whitespace-nowrap ${
+                unidadeFiltro === u.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 text-slate-700 hover:border-slate-500 active:bg-slate-50'
               }`}
             >
               {u.nome}
@@ -250,7 +250,7 @@ function AulaCard({ aula, onClick, compacto }: { aula: Aula; onClick: () => void
   return (
     <button
       onClick={onClick}
-      className="w-full text-left bg-white rounded-lg border-l-4 border border-slate-200 p-3 hover:border-slate-900 transition active:bg-slate-50"
+      className="w-full text-left bg-white rounded-lg border-l-4 border border-slate-200 p-3 hover:border-slate-900 active:bg-slate-50 transition active:bg-slate-50"
       style={{ borderLeftColor: cor }}
     >
       <div className="flex items-start justify-between gap-2">
