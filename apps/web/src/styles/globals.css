@@ -160,3 +160,62 @@ body {
 [data-theme='barsotti'] .themed-brand-accent {
   color: var(--accent);
 }
+
+/* ─────────────────────────────────────────────
+   Fundo das telas públicas (login, cadastro, esqueci senha).
+   No default fica neutro; no Barsotti ganha tratamento dramatic com
+   gradiente azul + acentos laranja para impactar o cliente/aluno.
+   ───────────────────────────────────────────── */
+.themed-auth-bg {
+  background: #f8fafc;
+}
+[data-theme='box'] .themed-auth-bg {
+  background: #0a0a0a;
+}
+[data-theme='barsotti'] .themed-auth-bg {
+  /* Camadas (de cima pra baixo no rendering):
+   *   1. Overlay azul escuro semi-transparente (garante legibilidade)
+   *   2. Imagem de fundo se existir em /auth-bg.jpg (drop the file lá)
+   *   3. Gradiente azul Barsotti (fallback quando a imagem não existe)
+   * O navegador ignora a camada da imagem se o asset não for encontrado.
+   */
+  background:
+    linear-gradient(140deg, rgba(9, 61, 128, 0.78) 0%, rgba(14, 79, 160, 0.72) 50%, rgba(21, 101, 199, 0.68) 100%),
+    url('/auth-bg.jpg') center / cover no-repeat,
+    radial-gradient(ellipse at 80% -10%, rgba(237, 102, 48, 0.35) 0%, transparent 55%),
+    radial-gradient(ellipse at -20% 110%, rgba(237, 102, 48, 0.20) 0%, transparent 60%),
+    linear-gradient(140deg, #093d80 0%, #0E4FA0 45%, #1565C7 100%);
+  position: relative;
+}
+[data-theme='barsotti'] .themed-auth-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(45deg, transparent 0 22px, rgba(255,255,255,0.02) 22px 23px);
+  pointer-events: none;
+}
+
+/* Card central das telas de auth — fundo branco no Barsotti pra contrastar */
+.themed-auth-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+[data-theme='box'] .themed-auth-card {
+  background: #171717;
+  border-color: #262626;
+  color: #f5f5f5;
+}
+[data-theme='barsotti'] .themed-auth-card {
+  background: #ffffff;
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 25px 60px -20px rgba(0, 0, 0, 0.35);
+}
+
+/* Texto das telas de auth — escuro no default, claro no Barsotti/Box */
+.themed-auth-fg      { color: #0f172a; }
+.themed-auth-fg-soft { color: #64748b; }
+[data-theme='box'] .themed-auth-fg      { color: #f5f5f5; }
+[data-theme='box'] .themed-auth-fg-soft { color: #a3a3a3; }
+[data-theme='barsotti'] .themed-auth-fg      { color: #ffffff; }
+[data-theme='barsotti'] .themed-auth-fg-soft { color: rgba(255, 255, 255, 0.78); }

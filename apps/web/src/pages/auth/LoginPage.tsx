@@ -72,26 +72,26 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-slate-50">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 themed-auth-bg relative overflow-hidden">
+      <div className="w-full max-w-md relative z-10">
         <div className="flex flex-col items-center mb-6">
-          <div className="h-16 w-16 rounded-2xl themed-sidebar flex items-center justify-center mb-3 shadow-lg">
-            <div className="h-10 w-10 rounded-xl themed-logo flex items-center justify-center">
-              <Dumbbell className="h-6 w-6" />
+          <div className="h-20 w-20 rounded-2xl themed-sidebar flex items-center justify-center mb-4 shadow-2xl ring-1 ring-white/20">
+            <div className="h-12 w-12 rounded-xl themed-logo flex items-center justify-center shadow-lg">
+              <Dumbbell className="h-7 w-7" />
             </div>
           </div>
           {brand.nomeComplemento ? (
-            <h1 className="themed-brand-title text-2xl leading-tight text-center">
+            <h1 className="themed-brand-title text-3xl leading-tight text-center themed-auth-fg drop-shadow-sm">
               <span style={{ color: 'var(--accent)' }}>{brand.nomeDestaque}</span>{' '}
-              <span className="text-slate-900">{brand.nomeComplemento}</span>
+              <span>{brand.nomeComplemento}</span>
             </h1>
           ) : (
-            <h1 className="text-2xl font-bold text-slate-900">{brand.nome}</h1>
+            <h1 className="text-2xl font-bold themed-auth-fg">{brand.nome}</h1>
           )}
-          <p className="text-sm text-slate-500 mt-1">{brand.slogan}</p>
+          <p className="text-sm themed-auth-fg-soft mt-1.5 tracking-wide">{brand.slogan}</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div className="themed-auth-card rounded-2xl shadow-xl p-6">
           {!vinculos ? (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <h2 className="text-lg font-semibold text-slate-900">Entrar</h2>
@@ -175,7 +175,7 @@ export function LoginPage() {
           )}
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-4">{brand.nome} {APP_VERSION} · {brand.rodape}</p>
+        <p className="text-center text-xs themed-auth-fg-soft mt-5">{brand.nome} {APP_VERSION} · {brand.rodape}</p>
       </div>
     </div>
   )
