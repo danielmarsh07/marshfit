@@ -174,13 +174,14 @@ body {
 }
 [data-theme='barsotti'] .themed-auth-bg {
   /* Camadas (de cima pra baixo no rendering):
-   *   1. Overlay azul escuro semi-transparente (garante legibilidade)
-   *   2. Imagem de fundo se existir em /auth-bg.jpg (drop the file lá)
-   *   3. Gradiente azul Barsotti (fallback quando a imagem não existe)
-   * O navegador ignora a camada da imagem se o asset não for encontrado.
+   *   1. Overlay azul escuro semi-transparente (garante legibilidade do form)
+   *   2. Imagem de fundo: tenta .png primeiro (sem perda), .jpg como fallback
+   *   3. Acentos laranja radiais e gradiente azul Barsotti (fallback se a
+   *      imagem nao for servida)
    */
   background:
     linear-gradient(140deg, rgba(9, 61, 128, 0.78) 0%, rgba(14, 79, 160, 0.72) 50%, rgba(21, 101, 199, 0.68) 100%),
+    url('/auth-bg.png') center / cover no-repeat,
     url('/auth-bg.jpg') center / cover no-repeat,
     radial-gradient(ellipse at 80% -10%, rgba(237, 102, 48, 0.35) 0%, transparent 55%),
     radial-gradient(ellipse at -20% 110%, rgba(237, 102, 48, 0.20) 0%, transparent 60%),
@@ -229,9 +230,11 @@ body {
 .themed-app-bg { background-color: #f8fafc; }
 [data-theme='box'] .themed-app-bg { background-color: #0a0a0a; }
 [data-theme='barsotti'] .themed-app-bg {
-  /* Sem overlay: imagem mostra suas cores originais (azul/branco do
-   * arquivo /auth-bg.jpg). Fallback solido se a imagem nao for servida. */
+  /* Imagem com cores originais (sem overlay).
+   * .png primeiro (sem perda), .jpg como fallback se nao houver .png.
+   * Fallback solido #f1f6fc se nenhum dos dois for servido. */
   background:
+    url('/auth-bg.png') center / cover no-repeat fixed,
     url('/auth-bg.jpg') center / cover no-repeat fixed,
     #f1f6fc;
 }
