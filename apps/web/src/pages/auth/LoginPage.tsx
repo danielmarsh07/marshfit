@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Dumbbell, Loader2 } from 'lucide-react'
 import { api } from '@/services/api'
 import { useAuthStore, type VinculoAtivo, type UsuarioAuth } from '@/stores/auth.store'
@@ -136,12 +136,6 @@ export function LoginPage() {
                 Entrar
               </button>
 
-              <div className="text-center text-sm text-slate-500">
-                Ainda não tem conta?{' '}
-                <Link to="/cadastro" className="text-slate-900 font-medium hover:underline">
-                  Criar conta grátis
-                </Link>
-              </div>
             </form>
           ) : (
             <div className="space-y-3">
