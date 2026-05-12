@@ -83,7 +83,7 @@ export function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen themed-app-bg">
       {/* Sidebar desktop */}
       <aside className="hidden md:flex md:w-64 flex-col themed-sidebar">
         <div className="px-4 py-5 border-b themed-sidebar-border">

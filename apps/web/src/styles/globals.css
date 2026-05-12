@@ -219,3 +219,18 @@ body {
 [data-theme='box'] .themed-auth-fg-soft { color: #a3a3a3; }
 [data-theme='barsotti'] .themed-auth-fg      { color: #ffffff; }
 [data-theme='barsotti'] .themed-auth-fg-soft { color: rgba(255, 255, 255, 0.78); }
+
+/* ─────────────────────────────────────────────
+   Fundo do app inteiro (sidebar continua azul,
+   mas o conteúdo principal ganha a foto como
+   watermark sutil — overlay 95% branco para não
+   competir com tabelas/cards.
+   ───────────────────────────────────────────── */
+.themed-app-bg { background-color: #f8fafc; }
+[data-theme='box'] .themed-app-bg { background-color: #0a0a0a; }
+[data-theme='barsotti'] .themed-app-bg {
+  background:
+    linear-gradient(rgba(248, 250, 252, 0.94), rgba(248, 250, 252, 0.94)),
+    url('/auth-bg.jpg') center / cover no-repeat fixed,
+    #f1f6fc;
+}
