@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -10,6 +10,7 @@ import { Field, Input, Select } from '@/components/ui/Field'
 import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { mensagemDeErro } from '@/lib/erro'
+import { useUnidadeAtiva } from '@/lib/papel'
 
 interface Sala {
   id: number
@@ -161,12 +162,21 @@ function SalaFormModal({
   salvando: boolean
   erro: string | null
 }) {
-  const { register, handleSubmit, formState: { errors } } = useForm<Form>({
+  const { restritoUnidade, unidadeId: unidadeIdLogada } = useUnidadeAtiva()
+  const unidadeIdPadrao = sala?.unidade.id ?? (restritoUnidade ? unidadeIdLogada ?? undefined : undefined)
+
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(schema),
     defaultValues: sala
       ? { unidadeId: sala.unidade.id, nome: sala.nome, capacidade: sala.capacidade, ativo: sala.ativo }
-      : { ativo: true } as Form,
+      : { unidadeId: unidadeIdPadrao as unknown as number, ativo: true } as Form,
   })
+
+  useEffect(() => {
+    if (!sala && !restritoUnidade && unidades.length === 1) {
+      setValue('unidadeId', unidades[0].id)
+    }
+  }, [sala, unidades, restritoUnidade, setValue])
 
   return (
     <Modal
@@ -179,12 +189,14 @@ function SalaFormModal({
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-        <Field label="Unidade" erro={errors.unidadeId?.message} obrigatorio>
-          <Select {...register('unidadeId')}>
-            <option value="">Selecione…</option>
-            {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
-          </Select>
-        </Field>
+        {!restritoUnidade && (
+          <Field label="Unidade" erro={errors.unidadeId?.message} obrigatorio>
+            <Select {...register('unidadeId')}>
+              <option value="">Selecione…</option>
+              {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+            </Select>
+          </Field>
+        )}
         <Field label="Nome da sala" erro={errors.nome?.message} obrigatorio>
           <Input {...register('nome')} placeholder="Box principal, Sala de pilates, etc" />
         </Field>

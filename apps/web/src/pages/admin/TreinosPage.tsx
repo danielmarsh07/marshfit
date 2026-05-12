@@ -10,6 +10,7 @@ import { Field, Input, Select, Textarea } from '@/components/ui/Field'
 import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { mensagemDeErro } from '@/lib/erro'
+import { useUnidadeAtiva } from '@/lib/papel'
 
 interface Unidade { id: number; nome: string }
 interface Modalidade { id: number; unidadeId: number; nome: string; cor: string | null }
@@ -180,6 +181,9 @@ function TreinoFormModal({
   salvando: boolean
   erro: string | null
 }) {
+  const { restritoUnidade, unidadeId: unidadeIdLogada } = useUnidadeAtiva()
+  const unidadeIdPadrao = treino?.unidadeId ?? (restritoUnidade ? unidadeIdLogada ?? undefined : undefined)
+
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(schema),
     defaultValues: treino ? {
@@ -191,16 +195,16 @@ function TreinoFormModal({
       duracaoMin: treino.duracaoMin ?? undefined,
       descricao: treino.descricao,
       ativo: treino.ativo,
-    } : { ativo: true } as Form,
+    } : { unidadeId: unidadeIdPadrao as unknown as number, ativo: true } as Form,
   })
 
   const unidadeIdSel = watch('unidadeId')
 
   useEffect(() => {
-    if (!treino && unidades.length === 1) {
+    if (!treino && !restritoUnidade && unidades.length === 1) {
       setValue('unidadeId', unidades[0].id)
     }
-  }, [treino, unidades, setValue])
+  }, [treino, unidades, restritoUnidade, setValue])
 
   const modalidadesFiltradas = modalidades.filter(m => !unidadeIdSel || m.unidadeId === Number(unidadeIdSel))
 
@@ -215,7 +219,7 @@ function TreinoFormModal({
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-        {!treino && (
+        {!treino && !restritoUnidade && (
           <Field label="Unidade" erro={errors.unidadeId?.message} obrigatorio>
             <Select {...register('unidadeId')}>
               <option value="">Selecione…</option>

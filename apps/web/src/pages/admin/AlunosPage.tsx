@@ -11,6 +11,7 @@ import { Field, Input, Select, Textarea } from '@/components/ui/Field'
 import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { mensagemDeErro } from '@/lib/erro'
+import { useUnidadeAtiva } from '@/lib/papel'
 
 type AlunoStatus = 'ATIVO' | 'INATIVO' | 'CONGELADO' | 'INADIMPLENTE'
 
@@ -218,9 +219,16 @@ function NovoAlunoModal({
   salvando: boolean
   erro: string | null
 }) {
+  const { restritoUnidade, unidadeId: unidadeIdLogada } = useUnidadeAtiva()
+  const unidadeIdPadrao = restritoUnidade
+    ? unidadeIdLogada ?? undefined
+    : unidades.length === 1 ? unidades[0].id : undefined
+
   const { register, handleSubmit, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(schema),
-    defaultValues: unidades.length === 1 ? { unidadeId: unidades[0].id } as Form : undefined,
+    defaultValues: unidadeIdPadrao
+      ? { unidadeId: unidadeIdPadrao } as Form
+      : undefined,
   })
 
   return (
@@ -234,12 +242,14 @@ function NovoAlunoModal({
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-        <Field label="Unidade" erro={errors.unidadeId?.message} obrigatorio>
-          <Select {...register('unidadeId')}>
-            <option value="">Selecione…</option>
-            {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
-          </Select>
-        </Field>
+        {!restritoUnidade && (
+          <Field label="Unidade" erro={errors.unidadeId?.message} obrigatorio>
+            <Select {...register('unidadeId')}>
+              <option value="">Selecione…</option>
+              {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+            </Select>
+          </Field>
+        )}
         <Field label="Nome completo" erro={errors.nome?.message} obrigatorio>
           <Input {...register('nome')} />
         </Field>

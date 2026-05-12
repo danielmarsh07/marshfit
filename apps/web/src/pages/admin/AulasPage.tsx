@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -10,6 +10,7 @@ import { Field, Input, Select } from '@/components/ui/Field'
 import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { mensagemDeErro } from '@/lib/erro'
+import { useUnidadeAtiva } from '@/lib/papel'
 
 interface Modalidade { id: number; nome: string; cor: string | null }
 interface UnidadeSimples { id: number; nome: string }
@@ -306,6 +307,9 @@ function AulaFormModal({
   salvando: boolean
   erro: string | null
 }) {
+  const { restritoUnidade, unidadeId: unidadeIdLogada } = useUnidadeAtiva()
+  const unidadeIdPadrao = aula?.unidadeId ?? (restritoUnidade ? unidadeIdLogada ?? undefined : undefined)
+
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(schema),
     defaultValues: aula ? {
@@ -321,8 +325,19 @@ function AulaFormModal({
       permiteListaEspera: aula.permiteListaEspera,
       treinoId: aula.treinoId ?? undefined,
       ativa: aula.ativa,
-    } : { diasSemana: [] as number[], permiteListaEspera: true, ativa: true } as Form,
+    } : {
+      unidadeId: unidadeIdPadrao as unknown as number,
+      diasSemana: [] as number[],
+      permiteListaEspera: true,
+      ativa: true,
+    } as Form,
   })
+
+  useEffect(() => {
+    if (!aula && !restritoUnidade && unidades.length === 1) {
+      setValue('unidadeId', unidades[0].id)
+    }
+  }, [aula, unidades, restritoUnidade, setValue])
 
   const unidadeIdSel = watch('unidadeId')
   const diasSel = watch('diasSemana') ?? []
@@ -361,13 +376,15 @@ function AulaFormModal({
           <Input {...register('nome')} placeholder="Ex: CrossFit Avançado" />
         </Field>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Unidade" erro={errors.unidadeId?.message} obrigatorio>
-            <Select {...register('unidadeId')}>
-              <option value="">Selecione…</option>
-              {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
-            </Select>
-          </Field>
+        <div className={`grid grid-cols-1 ${restritoUnidade ? '' : 'sm:grid-cols-2'} gap-3`}>
+          {!restritoUnidade && (
+            <Field label="Unidade" erro={errors.unidadeId?.message} obrigatorio>
+              <Select {...register('unidadeId')}>
+                <option value="">Selecione…</option>
+                {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+              </Select>
+            </Field>
+          )}
           <Field label="Sala" erro={errors.salaId?.message} obrigatorio>
             <Select {...register('salaId')}>
               <option value="">Selecione…</option>

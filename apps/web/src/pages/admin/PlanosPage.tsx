@@ -10,6 +10,7 @@ import { Field, Input, Select, Textarea } from '@/components/ui/Field'
 import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { mensagemDeErro } from '@/lib/erro'
+import { useUnidadeAtiva } from '@/lib/papel'
 
 interface Unidade { id: number; nome: string }
 interface Modalidade { id: number; unidadeId: number; nome: string; cor: string | null }
@@ -157,6 +158,9 @@ function PlanoFormModal({
   salvando: boolean
   erro: string | null
 }) {
+  const { restritoUnidade, unidadeId: unidadeIdLogada } = useUnidadeAtiva()
+  const unidadeIdPadrao = plano?.unidadeId ?? (restritoUnidade ? unidadeIdLogada ?? undefined : undefined)
+
   const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(schema),
     defaultValues: plano ? {
@@ -169,18 +173,24 @@ function PlanoFormModal({
       acessoLivre: plano.acessoLivre,
       modalidadeIds: plano.modalidades.map(m => m.id),
       ativo: plano.ativo,
-    } : { periodicidade: 'MENSAL', acessoLivre: false, ativo: true, modalidadeIds: [] as number[] } as Form,
+    } : {
+      unidadeId: unidadeIdPadrao as unknown as number,
+      periodicidade: 'MENSAL',
+      acessoLivre: false,
+      ativo: true,
+      modalidadeIds: [] as number[],
+    } as Form,
   })
 
   const acessoLivre = watch('acessoLivre')
   const unidadeIdSel = watch('unidadeId')
 
-  // Pré-seleciona quando há só 1 unidade.
+  // Pré-seleciona quando há só 1 unidade (admin/super).
   useEffect(() => {
-    if (!plano && unidades.length === 1) {
+    if (!plano && !restritoUnidade && unidades.length === 1) {
       setValue('unidadeId', unidades[0].id)
     }
-  }, [plano, unidades, setValue])
+  }, [plano, unidades, restritoUnidade, setValue])
 
   // Filtra modalidades pela unidade do plano (só faz sentido vincular as da mesma unidade).
   const modalidadesFiltradas = modalidades.filter(m => !unidadeIdSel || m.unidadeId === Number(unidadeIdSel))
@@ -198,7 +208,7 @@ function PlanoFormModal({
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-        {!plano && (
+        {!plano && !restritoUnidade && (
           <Field label="Unidade" erro={errors.unidadeId?.message} obrigatorio>
             <Select {...register('unidadeId')}>
               <option value="">Selecione…</option>
